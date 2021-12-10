@@ -196,7 +196,7 @@ class GeneZombie : ZombieMan {
         nnet.update();
 
         // lifetime
-        if (Random(0, 50) > 0) {
+        if (Random(0, 15) > 0) {
             return;
         }
 
