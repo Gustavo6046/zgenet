@@ -148,6 +148,7 @@ class GeneZombie : ZombieMan {
 
     default {
         +THRUSPECIES;
+        +LOOKALLAROUND;
         +NOINFIGHTSPECIES;
         Species "GeneZombie";
     }
