@@ -1,0 +1,50 @@
+zgenet
+======
+Gustavo Ramos Rehermann
+:toc:
+:numbered:
+
+This is a machine learning themed library for ZDoom ZScript, focusing
+on basic neural networks and genetic evolution therefor.
+
+== Getting Started
+
+=== Using as Library
+
+You must add this repository as a submodule of yours:
+
+[source,console]
+----
+git submodule add "https://github.com/Gustavo6046/zgenet" zgenet
+----
+
+Then, assuming your main ZScript file is on the same directory,
+include `zgenet/zgenet.zs`. There is no need to load `zgenet`
+as a separate mod - just include it as a subdirectory of yours!
+
+For an example on how to implement this, see `ZScript.example`.
+
+=== Run as Example
+
+Run this mod as a folder, alongside Doom 2:
+
+[source,console]
+----
+git clone "https://github.com/Gustavo6046/zgenet" zgenet
+gzdoom -iwad doom2.wad -file zgenet +map map12 +kill monsters +buddha +give health 999900
+----
+
+Running `summon GeneZombie 180` on the console will spawn a single zombie.
+
+Those zombies begin with random behaviour, but over time those whose behaviour happens
+to be able to score a shot or two at you will replicate, some of those replicas will mutate,
+while others die of old age, and hopefully what will be observed is that there will be a
+population of zombies that can aim at you decently or something.
+
+Make sure to spawn many of them! This can be a little bit resource intensive, but should
+give the evolution process plenty of wiggle room to start.
+
+== Licensing
+
+This project is licensed under the BSD 2-Clause License. For more info, see the `LICENSE`
+file.
