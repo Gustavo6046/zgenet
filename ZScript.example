@@ -213,13 +213,13 @@ class GeneZombie : ZombieMan {
             // when dying out, there's a chance to reproduce
             A_Log("Final fitness:  "..fitness);
 
-            if (FRandom(0, 1.0) < 0.333 && fitness < 1) {
+            if (FRandom(0, 1.0) < 0.333 && fitness < 1.5) {
                 // no replicate
                 nnet.Destroy(); // prevent died-out zombies from wasting memory
                 return;
             }
 
-            int replicas = 1.0 + log(1.0 + fitness / 1.5);
+            int replicas = log(1.0 + fitness / 1.5) - 0.9;
             for (int i = 0; i < replicas; i++) {
                 NeuralNetwork replicated = nnet.replicate();
             }
