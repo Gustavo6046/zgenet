@@ -176,11 +176,6 @@ class GeneZombie : ZombieMan {
                 // if enemy in sights, shoot
                 nnet.connect(5 << 2 || NEU_INPUTS, 5 << 2 || NEU_OUTPUTS);
             }
-
-            if (FRandom(0, 100) < 15) {
-                // if enemy far, walk
-                nnet.connect(10 << 2 || NEU_INPUTS, 1 << 2 || NEU_OUTPUTS);
-            }
         }
     }
 
