@@ -253,7 +253,7 @@ class GeneZombie : ZombieMan {
 
         A_Log("Replicating!");
 
-        int replicas = Random(6, 25);
+        int replicas = Random(3, 9);
         for (int i = 0; i < replicas; i++) {
             nnet.replicate();
         }
