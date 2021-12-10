@@ -294,7 +294,6 @@ class GeneZombie : ZombieMan {
             return;
         }
 
-        health += damage * 1.5;
         fitness += damage;
     }
 
