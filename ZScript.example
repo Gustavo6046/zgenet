@@ -88,17 +88,17 @@ class GeneZombieAgent : NNAgent {
         double sideward = net.outputs[3];
         double resideward = net.outputs[4];
 
-        if (abs(forward - backward) > NeuralNetwork.FIXUNIT / 7) {
-            MyZombie.vel.xy += AngleToVector((forward - backward) / NeuralNetwork.FIXUNIT, MyZombie.angle) * 0.03;
+        if (abs(forward - backward) > NeuralNetwork.FIXUNIT / 5) {
+            MyZombie.vel.xy += AngleToVector((forward - backward) / NeuralNetwork.FIXUNIT, MyZombie.angle) * 0.04;
         }
 
         if (abs(sideward - resideward) > NeuralNetwork.FIXUNIT / 7) {
-            MyZombie.vel.xy += AngleToVector((sideward - resideward) / NeuralNetwork.FIXUNIT, MyZombie.angle + 90) * 0.03;
+            MyZombie.vel.xy += AngleToVector((sideward - resideward) / NeuralNetwork.FIXUNIT, MyZombie.angle - 90) * 0.04;
         }
 
-        MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 35 / NeuralNetwork.FIXUNIT;
+        MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 5 / NeuralNetwork.FIXUNIT;
 
-        MyZombie.vel.xy -= MyZombie.vel.xy * 0.5;
+        MyZombie.vel.xy -= MyZombie.vel.xy * 0.6;
 
         if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT / 2) {
             MyZombie.SetStateLabel("Missile");
