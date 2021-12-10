@@ -92,13 +92,13 @@ class GeneZombieAgent : NNAgent {
         double forward_y = sin(MyZombie.angle);
 
         if (abs(forward - backward) > NeuralNetwork.FIXUNIT / 5) {
-            MyZombie.vel.x += forward_x * (forward - backward) / NeuralNetwork.FIXUNIT;
-            MyZombie.vel.y += forward_y * (forward - backward) / NeuralNetwork.FIXUNIT;
+            MyZombie.vel.x += forward_x * (forward - backward) / NeuralNetwork.FIXUNIT * 4;
+            MyZombie.vel.y += forward_y * (forward - backward) / NeuralNetwork.FIXUNIT * 4;
         }
 
         if (abs(sideward - resideward) > NeuralNetwork.FIXUNIT / 7) {
-            MyZombie.vel.x += forward_y * (sideward - resideward) / NeuralNetwork.FIXUNIT;
-            MyZombie.vel.y += -forward_x * (sideward - resideward) / NeuralNetwork.FIXUNIT;
+            MyZombie.vel.x += forward_y * (sideward - resideward) / NeuralNetwork.FIXUNIT * 4;
+            MyZombie.vel.y += -forward_x * (sideward - resideward) / NeuralNetwork.FIXUNIT * 4;
         }
 
         //A_Log("zombie velocity:  "..MyZombie.vel.x.."  "..MyZombie.vel.y);
