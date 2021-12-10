@@ -72,7 +72,7 @@ class GeneZombieAgent : NNAgent {
             net.inputs[11] = (1024.0 / (500 + MyZombie.Distance2D(MyZombie.target)) * 1.5) * NeuralNetwork.FIXUNIT;
 
             // velocity (fast and slow, respectively)
-            double velforce = sqrt(1.0 + MyZombie.vel.x * MyZombie.vel.x + MyZombie.vel.y + MyZombie.vel.y);
+            double velforce = sqrt((MyZombie.vel.x * MyZombie.vel.x) + (MyZombie.vel.y * MyZombie.vel.y));
             net.inputs[13] = velforce * NeuralNetwork.FIXUNIT / 5;
             net.inputs[14] = (8.0 / (1.0 + velforce)) * NeuralNetwork.FIXUNIT / 5;
         }
