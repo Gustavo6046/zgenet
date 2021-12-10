@@ -179,7 +179,7 @@ class NeuralNetwork {
             return null;
         }
 
-        Connection newConn = Connection.Make(from, to, FRandom(-4, 4) * FIXUNIT, FRandom(-4, 4) * FIXUNIT);
+        Connection newConn = Connection.Make(from, to, FRandom(-4, 4) * FIXUNIT, FRandom(-1, 1) * FIXUNIT);
         connections.Push(newConn);
 
         return newConn;

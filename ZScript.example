@@ -137,6 +137,7 @@ class GeneZombie : ZombieMan {
     NeuralNetwork nnet;
     bool ready;
     int lastTargetHealth;
+    double fitness;
 
     default {
         +THRUSPECIES;
@@ -203,8 +204,43 @@ class GeneZombie : ZombieMan {
         if (health <= 0) {
             SetStateLabel("Death");
 
-          	// prevent died-out zombies from wasting memory
+            // when dying out, there's a chance to reproduce
+            double repliChance = 1.0 / (1.0 + log(1.0 + fitness));
+
+            int replicas = Random(3, 9);
+            for (int i = 0; i < replicas; i++) {
+                nnet.replicate();
+            }
+
+            return;
+
+            // prevent died-out zombies from wasting memory
             nnet.Destroy();
+        }
+
+        if (fitness < 1) {
+            fitness += 0.01;
+        }
+
+        else if (fitness > 1) {
+            fitness -= 0.015;
+        }
+
+        // some other things that would be nice to have in zombies
+        if (target == null) {
+            return;
+        }
+
+        if (AbsAngle(angle, AngleTo(target)) < 15) {
+            fitness += 0.2;
+        }
+
+        if (Distance2D(target) < 384) {
+            fitness += 0.05;
+        }
+
+        if (Distance2D(target) > 1024) {
+            fitness -= 0.02;
         }
     }
 
@@ -243,21 +279,8 @@ class GeneZombie : ZombieMan {
             return;
         }
 
-        health += damage * 2;
-
-        double repliChance = 100.0 * damage / 10;
-        A_Log("Replichance: "..repliChance);
-
-        if (FRandom(0, 100) >= repliChance) {
-            return;
-        }
-
-        A_Log("Replicating!");
-
-        int replicas = Random(3, 9);
-        for (int i = 0; i < replicas; i++) {
-            nnet.replicate();
-        }
+        health += damage * 1.5;
+        fitness += damage;
     }
 
     states {
