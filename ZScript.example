@@ -202,6 +202,9 @@ class GeneZombie : ZombieMan {
 
         if (health <= 0) {
             SetStateLabel("Death");
+
+          	// prevent died-out zombies from wasting memory
+            nnet.Destroy();
         }
     }
 
