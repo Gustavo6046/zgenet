@@ -88,13 +88,20 @@ class GeneZombieAgent : NNAgent {
         double sideward = net.outputs[3];
         double resideward = net.outputs[4];
 
+        double forward_x = cos(MyZombie.angle);
+        double forward_y = sin(MyZombie.angle);
+
         if (abs(forward - backward) > NeuralNetwork.FIXUNIT / 5) {
-            MyZombie.vel.xy += AngleToVector((forward - backward) / NeuralNetwork.FIXUNIT, MyZombie.angle) * 0.015;
+            MyZombie.vel.x += forward_x * (forward - backward) / NeuralNetwork.FIXUNIT;
+            MyZombie.vel.y += forward_y * (forward - backward) / NeuralNetwork.FIXUNIT;
         }
 
         if (abs(sideward - resideward) > NeuralNetwork.FIXUNIT / 7) {
-            MyZombie.vel.xy += AngleToVector((sideward - resideward) / NeuralNetwork.FIXUNIT, MyZombie.angle - 90) * 0.015;
+            MyZombie.vel.x += forward_y * (sideward - resideward) / NeuralNetwork.FIXUNIT;
+            MyZombie.vel.y += -forward_x * (sideward - resideward) / NeuralNetwork.FIXUNIT;
         }
+
+        //A_Log("zombie velocity:  "..MyZombie.vel.x.."  "..MyZombie.vel.y);
 
         MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 5 / NeuralNetwork.FIXUNIT;
 
@@ -205,17 +212,21 @@ class GeneZombie : ZombieMan {
             SetStateLabel("Death");
 
             // when dying out, there's a chance to reproduce
-            double repliChance = 1.0 / (1.0 + log(1.0 + fitness));
+            double repliChance = 1.0 / (1.0 + log(1.0 + fitness / 1.5));
+
+            if (FRandom(0, 2.0) > repliChance) {
+                // no replicate
+                nnet.Destroy(); // prevent died-out zombies from wasting memory
+                return;
+            }
 
             int replicas = Random(3, 9);
             for (int i = 0; i < replicas; i++) {
                 nnet.replicate();
             }
 
+            nnet.Destroy(); // prevent died-out zombies from wasting memory
             return;
-
-            // prevent died-out zombies from wasting memory
-            nnet.Destroy();
         }
 
         if (fitness < 1) {
