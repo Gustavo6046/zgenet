@@ -145,6 +145,7 @@ class GeneZombie : ZombieMan {
     bool ready;
     int lastTargetHealth;
     double fitness;
+    double offspringQuota;
 
     default {
         +THRUSPECIES;
@@ -157,6 +158,9 @@ class GeneZombie : ZombieMan {
         Super.PostBeginPlay();
 
         agent = GeneZombieAgent.Make(self);
+        fitness = 0.0;
+        lastTargetHealth = 0.0;
+        ready = false;
 
         if (nnet == null) {
             nnet = NeuralNetwork.Make(15, 7, 25, agent);
