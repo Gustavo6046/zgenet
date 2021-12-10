@@ -261,7 +261,11 @@ class GeneZombie : ZombieMan {
 
     GeneZombie Reproduce() {
         Vector3 SpawnOffs;
-        SpawnOffs.xy = AngleToVector(FRandom(radius, 220), FRandom(0, 360));
+
+        double spawnang = FRandom(0, 360);
+        double spawndist = FRandom(radius * 2, 220);
+        SpawnOffs.x = cos(spawnang) * spawndist;
+        SpawnOffs.y = sin(spawnang) * spawndist;
         
         GeneZombie newZombie = GeneZombie(Spawn("GeneZombie", pos + SpawnOffs));
 
