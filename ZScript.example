@@ -145,7 +145,6 @@ class GeneZombie : ZombieMan {
     bool ready;
     int lastTargetHealth;
     double fitness;
-    double offspringQuota;
 
     default {
         +THRUSPECIES;
@@ -217,17 +216,17 @@ class GeneZombie : ZombieMan {
             SetStateLabel("Death");
 
             // when dying out, there's a chance to reproduce
-            double repliChance = 1.0 / (1.0 + log(1.0 + fitness / 1.5));
+            A_Log("Final fitness:  "..fitness);
 
-            if (FRandom(0, 2.0) > repliChance) {
+            if (FRandom(0, 1.0) < 0.333 && fitness < 1) {
                 // no replicate
                 nnet.Destroy(); // prevent died-out zombies from wasting memory
                 return;
             }
 
-            int replicas = Random(3, 9);
+            int replicas = 1.0 + log(1.0 + fitness / 1.5);
             for (int i = 0; i < replicas; i++) {
-                nnet.replicate();
+                NeuralNetwork replicated = nnet.replicate();
             }
 
             nnet.Destroy(); // prevent died-out zombies from wasting memory
