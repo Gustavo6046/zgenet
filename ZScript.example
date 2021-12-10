@@ -98,8 +98,6 @@ class GeneZombieAgent : NNAgent {
 
         MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 5 / NeuralNetwork.FIXUNIT;
 
-        MyZombie.vel.xy -= MyZombie.vel.xy * 0.6;
-
         if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT / 2) {
             MyZombie.SetStateLabel("Missile");
         }
