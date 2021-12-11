@@ -23,6 +23,9 @@ class GeneZombieAgent : NNAgent {
         // oscillator neurons
         net.inputs[8] = sin(ageval) * NeuralNetwork.FIXUNIT;
         net.inputs[9] = sin(ageval / 8) * NeuralNetwork.FIXUNIT;
+
+        // am firing?
+        net.inputs[15] = (MyZombie.firing ? NeuralNetwork.FIXUNIT : 0);
         
         if (MyZombie.target == null) {
             net.inputs[1] = 0;
@@ -166,6 +169,7 @@ class GeneZombie : ZombieMan {
     GeneZombieAgent agent;
     NeuralNetwork nnet;
     bool ready;
+    bool firing;
     int lastTargetHealth;
     double fitness;
 
@@ -195,7 +199,7 @@ class GeneZombie : ZombieMan {
         ready = false;
 
         if (nnet == null) {
-            nnet = NeuralNetwork.Make(15, 7, 25, agent);
+            nnet = NeuralNetwork.Make(16, 7, 25, agent);
 
             int numNewConns = Random(5, 200);
 
@@ -241,8 +245,9 @@ class GeneZombie : ZombieMan {
         _lastFitness = fitness;
     }
 
-    void SelfState(int isReady) {
+    void SelfState(int isReady, int isFiring = 0) {
         ready = isReady == 1;
+        firing = isfiring == 1;
     }
 
     override void OnDestroy() {
@@ -354,7 +359,7 @@ class GeneZombie : ZombieMan {
             loop;
 
         Missile:
-            POSS E 0 SelfState(0);
+            POSS E 0 SelfState(0, 1);
             POSS EE 4 ActivateBrain;
 
             POSS F 0 CheckTargetHealth;
