@@ -282,7 +282,6 @@ class GenePopulation : Actor /* for A_Log */ {
         scoreboard.ranked.Delete(scoreIdx);
         scoreboard.fitnesses.Delete(scoreIdx);
 
-        zomb.nnet.Destroy();
         zomb.Destroy();
     }
 
@@ -550,6 +549,10 @@ class GeneZombie : ZombieMan {
     override void OnDestroy() {
         if (nnet != null) {
             nnet.Destroy();
+        }
+
+        if (agent != null) {
+            agent.Destroy();
         }
     }
 
