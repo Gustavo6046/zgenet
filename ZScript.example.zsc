@@ -139,12 +139,43 @@ class ThruSpeciesBulletPuff : BulletPuff {
     }
 }
 
+class GeneZombiePopulation : Thinker {
+    double averageFitness;
+    int population;
+
+    GeneZombiePopulation Init() {
+        ChangeStatNum(STAT_INFO);
+        averageFitness = 0;
+        population = 0;
+        return self;
+    }
+
+    static GeneZombiePopulation Get() {
+        ThinkerIterator it = ThinkerIterator.Create("GeneZombiePopulation", STAT_INFO);
+        let p = GeneZombiePopulation(it.Next());
+
+        if (p == null) {
+            p = new("GeneZombiePopulation").Init();
+        }
+
+        return p;
+    }
+}
+
 class GeneZombie : ZombieMan {
     GeneZombieAgent agent;
     NeuralNetwork nnet;
     bool ready;
     int lastTargetHealth;
     double fitness;
+
+    int hits;
+    double aimScore;
+
+    double _lastFitness;
+
+    GeneZombiePopulation popInfo;
+    
 
     default {
         +THRUSPECIES;
@@ -155,6 +186,8 @@ class GeneZombie : ZombieMan {
 
     override void PostBeginPlay() {
         Super.PostBeginPlay();
+
+        popInfo = GeneZombiePopulation.Get();
 
         agent = GeneZombieAgent.Make(self);
         fitness = 0.0;
@@ -177,6 +210,35 @@ class GeneZombie : ZombieMan {
                 nnet.connect(5 << 2 || NEU_INPUTS, 5 << 2 || NEU_OUTPUTS);
             }
         }
+
+        popInfo.averageFitness *= 1.0 * popInfo.population / (popInfo.population + 1);
+        popInfo.population += 1;
+    }
+
+    private void updateFitness() {
+        calcFitness();
+        updateAvgFitness();
+    }
+
+    private void calcFitness() {
+        fitness = hits * 10;
+        fitness += health;
+        fitness += aimScore;
+    }
+
+    private void scoreAim() {
+        if (AbsAngle(angle, AngleTo(target)) < 15) {
+            aimScore += 0.04;
+        }
+    }
+
+    private void updateAvgFitness() {
+        if (fitness == _lastFitness) {
+            return;
+        }
+    
+        popInfo.averageFitness += (fitness - _lastFitness) / popInfo.population;
+        _lastFitness = fitness;
     }
 
     void SelfState(int isReady) {
@@ -187,6 +249,13 @@ class GeneZombie : ZombieMan {
         if (nnet != null) {
             nnet.Destroy();
         }
+    }
+
+    void Remove() {
+        nnet.Destroy(); // prevent died-out zombies from wasting memory
+
+        popInfo.averageFitness -= fitness / popInfo.population;
+        popInfo.population -= 1;
     }
 
     void ActivateBrain() {
@@ -200,6 +269,9 @@ class GeneZombie : ZombieMan {
 
         nnet.update();
 
+        scoreAim(); 
+        calcFitness();
+
         // lifetime
         if (Random(0, 15) > 0) {
             return;
@@ -211,46 +283,21 @@ class GeneZombie : ZombieMan {
             SetStateLabel("Death");
 
             // when dying out, there's a chance to reproduce
-            A_Log("Final fitness:  "..fitness);
+            A_Log(String.Format("Final fitness: %.2f (average: %.2f)", fitness, averageFitness));
 
-            if (FRandom(0, 1.0) < 0.333 && fitness < 1.5) {
+            if (fitness < averageFitness) {
                 // no replicate
-                nnet.Destroy(); // prevent died-out zombies from wasting memory
+                Remove();
                 return;
             }
 
-            int replicas = log(1.0 + fitness / 1.5) - 0.9;
+            int replicas = log(1.0 + (fitness - averageFitness) / 2.0);
             for (int i = 0; i < replicas; i++) {
                 NeuralNetwork replicated = nnet.replicate();
             }
 
-            nnet.Destroy(); // prevent died-out zombies from wasting memory
+            Remove();
             return;
-        }
-
-        if (fitness < 1) {
-            fitness += 0.01;
-        }
-
-        else if (fitness > 1) {
-            fitness -= 0.015;
-        }
-
-        // some other things that would be nice to have in zombies
-        if (target == null) {
-            return;
-        }
-
-        if (AbsAngle(angle, AngleTo(target)) < 15) {
-            fitness += 0.2;
-        }
-
-        if (Distance2D(target) < 384) {
-            fitness += 0.05;
-        }
-
-        if (Distance2D(target) > 1024) {
-            fitness -= 0.02;
         }
     }
 
@@ -293,7 +340,8 @@ class GeneZombie : ZombieMan {
             return;
         }
 
-        fitness += damage;
+        hits += 1;
+        updateFitness();
     }
 
     states {

@@ -19,10 +19,10 @@ git submodule add "https://github.com/Gustavo6046/zgenet" zgenet
 ----
 
 Then, assuming your main ZScript file is on the same directory,
-include `zgenet/zgenet.zs`. There is no need to load `zgenet`
+include `zgenet/zgenet.zsc`. There is no need to load `zgenet`
 as a separate mod - just include it as a subdirectory of yours!
 
-For an example on how to implement this, see `ZScript.example`.
+For an example on how to implement this, see `ZScript.example.zsc`.
 
 === Run as Example
 
