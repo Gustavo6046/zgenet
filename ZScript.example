@@ -172,6 +172,7 @@ class GeneZombie : ZombieMan {
     bool firing;
     int lastTargetHealth;
     double fitness;
+    bool counted;
 
     int hits;
     double aimScore;
@@ -195,6 +196,7 @@ class GeneZombie : ZombieMan {
         popInfo = GeneZombiePopulation.Get();
 
         fitness = 0.0;
+        counted = true;
         _lastFitness = 0.0;
         aimScore = 0.0;
         hits = 0;
@@ -226,6 +228,10 @@ class GeneZombie : ZombieMan {
     }
 
     private void updateFitness() {
+        if (!counted) {
+            return;
+        }
+
         calcFitness();
         updateAvgFitness();
     }
@@ -282,11 +288,21 @@ class GeneZombie : ZombieMan {
         }
     }
 
-    void Remove() {
-        nnet.Destroy(); // prevent died-out zombies from wasting memory
-
+    private void UncountFromPop() {
         popInfo.averageFitness -= fitness / popInfo.population;
         popInfo.population -= 1;
+        counted = false;
+    }
+
+    private void CountInPop() {
+        popInfo.population += 1;
+        popInfo.averageFitness += fitness / popInfo.population;
+        counted = true;
+    }
+
+    void Remove() {
+        UncountFromPop();
+        nnet.Destroy(); // prevent died-out zombies from wasting memory
     }
 
     void ActivateBrain() {
@@ -398,10 +414,16 @@ class GeneZombie : ZombieMan {
 
         Death:
             POSS M 0 SelfState(0);
+            POSS M 0 UncountFromPop;
             goto Super::Death;
 
         XDeath:
             POSS H 0 SelfState(0);
+            POSS H 0 UncountFromPop;
             goto Super::XDeath;
+
+        Raise:
+            POSS K 0 RecountToPop;
+            goto Super::Raise;
     }
 }
