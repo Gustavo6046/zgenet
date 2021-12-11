@@ -130,7 +130,7 @@ class GeneZombieAgent : NNAgent {
         MyZombie.pitch -= MyZombie.pitch * 0.15; // soft lookspring
 
         // if applicable, fire!
-        if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT / 2) {
+        if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT * 3 / 4) {
             MyZombie.SetStateLabel("Missile");
         }
     }
