@@ -347,7 +347,7 @@ class GenePopulation : Actor /* for A_Log */ {
         A_Log(
             String.Format("Repopulating zombies; generation %i is done (will breed %i more and create %i random)",
                 generation,
-                bredPop - population,
+                bredPop - population - (population >= 2 ? 0 : (2 - population)),
                 targetPop - bredPop + (population >= 2 ? 0 : (2 - population)))
         );
 
@@ -399,6 +399,7 @@ class GeneZombie : ZombieMan {
         +LOOKALLAROUND;
         +NOINFIGHTSPECIES;
         +FRIENDLY;
+        -COUNTKILL;
         Species "GeneZombie";
     }
 
