@@ -79,6 +79,25 @@ class GeneZombieAgent : NNAgent {
             net.inputs[13] = velforce * NeuralNetwork.FIXUNIT / 5;
             net.inputs[14] = (8.0 / (1.0 + velforce)) * NeuralNetwork.FIXUNIT / 5;
         }
+
+        // == lookAhead inputs
+        inputLookAhead(net, 300, 16);
+        inputLookAhead(net, 1200, 21);
+    }
+
+    private void inputLookAhead(NeuralNetwork net, double distance, int offset) {
+        bool bWall;.
+        bool bTarget;
+        bool bFriend;
+        double proximity;
+
+        MyZombie.lookAhead(bWall, bTarget, bFriend, proximity, distance);
+        
+        net.inputs[offset] = (bWall ? NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 1] = (bTarget ? NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 2] = (bFriend ? NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 3] = proximity * NeuralNetwork.FIXUNIT;
+        net.inputs[offset + 4] = (1.0 - proximity) * NeuralNetwork.FIXUNIT;
     }
 
     override void applyOutputs(NeuralNetwork net) {
@@ -190,6 +209,40 @@ class GeneZombie : ZombieMan {
         Species "GeneZombie";
     }
 
+    void lookAhead(out bool bWall, out bool bTarget, out bool bFriend, out double proximity, double distance = 1024) {
+        FLineTraceData RemoteRay;
+        bool hit = LineTrace(
+           angle,
+           distance,
+           pitch,
+           offsetz: height-12,
+           data: RemoteRay
+        );
+
+        if (!hit) {
+           return;
+        }
+
+        proximity = 1024.0 / (1024 + RemoteRay.Distance);
+        proximity *= proximity * proximity;
+
+        if (RemoteRay.HitType == TRACE_HitWall) {
+            bWall = true;
+        }
+
+        else if (RemoteRay.HitType != TRACE_HitActor) {
+            return;
+        }
+
+        if (GeneZombie(RemoteRay.HitActor) != null) {
+            bFriend = true;
+        }
+
+        if (RemoteRay.HitActor == target && target != null) {
+            bTarget = true;
+        }
+    }
+
     override void PostBeginPlay() {
         Super.PostBeginPlay();
 
@@ -207,7 +260,7 @@ class GeneZombie : ZombieMan {
         agent = GeneZombieAgent.Make(self);
 
         if (nnet == null) {
-            nnet = NeuralNetwork.Make(16, 7, 25, agent);
+            nnet = NeuralNetwork.Make(26, 7, 25, agent);
 
             int numNewConns = Random(5, 200);
 
