@@ -161,26 +161,213 @@ class ThruSpeciesBulletPuff : BulletPuff {
     }
 }
 
-class GeneZombiePopulation : Thinker {
-    double averageFitness;
-    int population;
+class PopulationScoreboard {
+    Array<GeneZombie> ranked;
+    Array<double> fitnesses;
 
-    GeneZombiePopulation Init() {
-        ChangeStatNum(STAT_INFO);
-        averageFitness = 0;
-        population = 0;
-        return self;
+    bool IsSorted() {
+        double earlier = fitnesses[0];
+        int i = 1;
+
+        while (i < fitnesses.Size()) {
+            if (fitnesses[i] > earlier) {
+                return false;
+            }
+
+            earlier = fitnesses[i];
+            i++;
+        }
+
+        return true;
     }
 
-    static GeneZombiePopulation Get() {
-        ThinkerIterator it = ThinkerIterator.Create("GeneZombiePopulation", STAT_INFO);
-        let p = GeneZombiePopulation(it.Next());
+    void UpdateFitnesses() {
+        for (int i = 0; i < ranked.Size(); i++) {
+            fitnesses[i] = ranked[i].fitness;
+        }
+
+        Sort();
+    }
+
+    void Sort() {
+        bool sorted = false;
+
+        while (!sorted) {
+            sorted = true;
+
+            for (int swapPos = 0; swapPos < fitnesses.Size() - 1; swapPos++) {
+                double earlier = fitnesses[swapPos];
+
+                if (earlier > fitnesses[swapPos + 1]) {
+                    sorted = false; // more sorting may be necessary
+
+                    fitnesses[swapPos] = fitnesses[swapPos + 1];
+                    fitnesses[swapPos + 1] = earlier;
+
+                    GeneZombie earlierVal = ranked[swapPos];
+                    ranked[swapPos] = ranked[swapPos + 1];
+                    ranked[swapPos + 1] = earlierVal;
+                }
+            }
+        }
+    }
+}
+
+class Vector3V {
+    Vector3 val;
+
+    Vector3 Get() {
+        return val;
+    }
+
+    void Set(Vector3 newVal) {
+        val = newVal;
+    }
+
+    static Vector3V Make(Vector3 val) {
+        let v3v = Vector3V(New("Vector3V"));
+        v3v.val = val;
+
+        return v3v;
+    }
+}
+
+class GenePopulation : Actor /* for A_Log */ {
+    double averageFitness;
+    int population;
+    Array<GeneZombie> zombies;
+    Array<Vector3V> spawnSpots;
+    int generation;
+
+    PopulationScoreboard scoreboard;
+    
+    // Hyperparameters
+    int targetPop;
+    float bredProportion;
+    float survivalThreshold;
+
+    void Init() {
+        ChangeStatNum(STAT_INFO);
+
+        averageFitness = 0;
+        population = 0;
+        generation = 1;
+        scoreboard = New("PopulationScoreboard");
+
+        // (set hyperparameter values here)
+        targetPop = 100;
+        survivalThreshold = 0.15;
+        bredProportion = 0.75;
+    }
+
+    static GenePopulation Get() {
+        ThinkerIterator it = ThinkerIterator.Create("GenePopulation", STAT_INFO);
+        let p = GenePopulation(it.Next());
 
         if (p == null) {
-            p = new("GeneZombiePopulation").Init();
+            p = GenePopulation(Spawn("GenePopulation"));
+            p.Init();
         }
 
         return p;
+    }
+
+    void RemoveZombie(GeneZombie zomb) {
+        zombies.Delete(zombies.Find(zomb));
+        
+        int scoreIdx = scoreboard.ranked.Find(zomb);
+        scoreboard.ranked.Delete(scoreIdx);
+        scoreboard.fitnesses.Delete(scoreIdx);
+
+        zomb.nnet.Destroy();
+        zomb.Destroy();
+    }
+
+    void AddZombie(GeneZombie zomb) {
+        scoreboard.ranked.Push(zomb);
+        scoreboard.fitnesses.Push(zomb.fitness);
+        //scoreboard.Sort();
+    }
+
+    void KillLivingZombies() {
+        for (int i = 0; i < zombies.Size(); i++) {
+            if (zombies[i].Health > 0) {
+                zombies[i].Health = 0;
+                // let ActivateBrain lead to the Death state;
+                // don't jump to it now, otherwise it will
+                // call UncountFromPop and mess things up
+            }
+        }
+    }
+
+    void CullUndesirable() {
+        int cullIndex = scoreboard.ranked.Size() * survivalThreshold + 1;
+    
+        while (cullIndex < scoreboard.ranked.Size()) {
+            RemoveZombie(scoreboard.ranked[cullIndex]);
+        }
+    }
+
+    bool BreedNew() {
+        int momIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
+        int dadIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
+
+        return NeuralNetwork.breed(scoreboard.ranked[momIdx].nnet, scoreboard.ranked[dadIdx].nnet) != null;
+    }
+
+    bool RandomNew() {
+        if (spawnSpots.Size() == 0) {
+            return false;
+        }
+
+        Vector3 spawnPos = spawnSpots[Random(0, spawnSpots.Size() - 1)].Get();
+
+        Spawn("GeneZombie", spawnPos);
+
+        return true;
+    }
+
+    void Repopulate() {
+        if (population > targetPop * survivalThreshold && population > 0) {
+            return;
+        }
+
+        generation += 1;
+
+        //KillLivingZombies();
+
+        scoreboard.UpdateFitnesses();
+        CullUndesirable();
+
+        int bredPop = targetPop * bredProportion;
+
+        A_Log(
+            String.Format("Repopulating zombies; generation %i is done (will breed %i more and create %i random)",
+                generation,
+                bredPop - population,
+                targetPop - bredPop + (population >= 2 ? 0 : (2 - population)))
+        );
+
+        while (population < 2) {
+            if (!RandomNew()) {
+                A_Log("heck");
+                return;
+            }
+        }
+
+        while (population < bredPop) {
+            if (!BreedNew()) {
+                A_Log("heck");
+                break;
+            }
+        }
+
+        while (population < targetPop) {
+            if (!RandomNew()) {
+                A_Log("heck");
+                break;
+            }
+        }
     }
 }
 
@@ -201,13 +388,14 @@ class GeneZombie : ZombieMan {
     private double lastFitness;
     private int lastSelfHealth;
 
-    GeneZombiePopulation popInfo;
+    GenePopulation popInfo;
     
 
     default {
         +THRUSPECIES;
         +LOOKALLAROUND;
         +NOINFIGHTSPECIES;
+        +FRIENDLY;
         Species "GeneZombie";
     }
 
@@ -245,10 +433,12 @@ class GeneZombie : ZombieMan {
         }
     }
 
-    override void PostBeginPlay() {
-        Super.PostBeginPlay();
+    override void BeginPlay() {
+        Super.BeginPlay();
 
-        popInfo = GeneZombiePopulation.Get();
+        popInfo = GenePopulation.Get();
+        popInfo.AddZombie(self);
+        popInfo.spawnSpots.Push(Vector3V.Make(pos));
 
         fitness = 0.0;
         counted = true;
@@ -279,8 +469,7 @@ class GeneZombie : ZombieMan {
             }
         }
 
-        popInfo.averageFitness *= 1.0 * popInfo.population / (popInfo.population + 1);
-        popInfo.population += 1;
+        RecountIntoPop();
     }
 
     private void updateFitness() {
@@ -355,12 +544,24 @@ class GeneZombie : ZombieMan {
         popInfo.averageFitness -= fitness / popInfo.population;
         popInfo.population -= 1;
         counted = false;
+        //popInfo.RemoveZombie(self);
+
+        popInfo.Repopulate();
     }
 
     private void RecountIntoPop() {
         popInfo.population += 1;
-        popInfo.averageFitness += fitness / popInfo.population;
+
+        if (popInfo.population > 0) {        
+            popInfo.averageFitness += fitness / popInfo.population;
+        }
+
+        else {
+            popInfo.averageFitness = fitness;
+        }
+
         counted = true;
+        //popInfo.AddZombie(self);
     }
 
     void Remove() {
@@ -372,6 +573,11 @@ class GeneZombie : ZombieMan {
     }
 
     void ActivateBrain() {
+        if (health <= 0) {
+            SetStateLabel("Death");
+            return;
+        }
+    
         if (nnet == null) {
             return;
         }
@@ -397,6 +603,11 @@ class GeneZombie : ZombieMan {
         lastSelfHealth -= 1;
 
         if (health <= 0) {
+            SetStateLabel("Death");
+            return;
+
+            /* -- old mitosis code
+
             // when dying out, there's a chance to reproduce
             A_Log(String.Format("Final fitness: %.2f (average: %.2f)", fitness, popInfo.averageFitness));
 
@@ -413,6 +624,8 @@ class GeneZombie : ZombieMan {
 
             Remove();
             return;
+
+            */
         }
     }
 
@@ -421,14 +634,24 @@ class GeneZombie : ZombieMan {
     }
 
     GeneZombie Reproduce() {
-        Vector3 SpawnOffs;
+        GeneZombie newZombie;
 
-        double spawnang = FRandom(0, 360);
-        double spawndist = FRandom(radius * 2, 220);
-        SpawnOffs.x = cos(spawnang) * spawndist;
-        SpawnOffs.y = sin(spawnang) * spawndist;
-        
-        GeneZombie newZombie = GeneZombie(Spawn("GeneZombie", pos + SpawnOffs));
+        if (popInfo != null && popInfo.spawnSpots.Size() > 0) {
+            Vector3 spawnPos = popInfo.spawnSpots[Random(0, popInfo.spawnSpots.Size() - 1)].Get();
+
+            newZombie = GeneZombie(Spawn("GeneZombie", spawnPos));
+        }
+
+        else {
+            Vector3 SpawnOffs;
+
+            double spawnang = FRandom(0, 360);
+            double spawndist = FRandom(radius * 2, 220);
+            SpawnOffs.x = cos(spawnang) * spawndist;
+            SpawnOffs.y = sin(spawnang) * spawndist;
+            
+            newZombie = GeneZombie(Spawn("GeneZombie", pos + SpawnOffs));
+        }
 
         if (newZombie == null) {
             return null;
@@ -439,7 +662,7 @@ class GeneZombie : ZombieMan {
         }
 
         newZombie.target = target;
-        newZombie.angle = angle;
+        newZombie.angle = FRandom(0, 360);
 
         return newZombie;
     }
