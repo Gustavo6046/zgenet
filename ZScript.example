@@ -316,7 +316,7 @@ class GenePopulation : Actor /* for A_Log */ {
 
         if (population >= 2) {
             while (dadIdx == momIdx) {
-                Random(0, scoreboard.ranked.Size() * survivalThreshold)
+                dadIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
             }
         }
 
