@@ -301,8 +301,11 @@ class GeneZombie : ZombieMan {
     }
 
     void Remove() {
-        UncountFromPop();
-        nnet.Destroy(); // prevent died-out zombies from wasting memory
+        SetStateLabel("Death");
+        nnet.Destroy(); // prevent removed zombies from wasting memory
+
+        // all removals are deaths, but not all deaths should be removals
+        // (e.g. arch-vile can raise a GeneZombie if it was killed by others)
     }
 
     void ActivateBrain() {
@@ -327,8 +330,6 @@ class GeneZombie : ZombieMan {
         health -= 1;
 
         if (health <= 0) {
-            SetStateLabel("Death");
-
             // when dying out, there's a chance to reproduce
             A_Log(String.Format("Final fitness: %.2f (average: %.2f)", fitness, popInfo.averageFitness));
 
