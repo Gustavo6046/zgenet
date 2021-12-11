@@ -175,6 +175,7 @@ class GeneZombie : ZombieMan {
 
     int hits;
     double aimScore;
+    double sightScore;
 
     double _lastFitness;
 
@@ -230,9 +231,20 @@ class GeneZombie : ZombieMan {
     }
 
     private void calcFitness() {
-        fitness = hits * 10;
-        fitness += health;
+        fitness = hits * 5;
+        fitness += health / 2;
         fitness += aimScore;
+        fitness += sightScore;
+    }
+
+    private void scoreSight() {
+        if (target == null) {
+            return;
+        }
+    
+        if (!CheckSight(target)) {
+            sightScore -= 0.07;
+        }
     }
 
     private void scoreAim() {
@@ -245,7 +257,7 @@ class GeneZombie : ZombieMan {
         }
 
         else if (AbsAngle(angle, AngleTo(target)) > 90) {
-            aimScore -= 0.04;
+            aimScore -= 0.01;
         }
     }
 
@@ -253,7 +265,8 @@ class GeneZombie : ZombieMan {
         if (fitness == _lastFitness) {
             return;
         }
-    
+
+        A_Log(String.Format("Delta fitness Df=%.2f from pop=%i update avg: %.2f + %.2f = %.2f", (fitness - _lastFitness), popInfo.population, popInfo.averageFitness, (fitness - _lastFitness) / popInfo.population, popInfo.averageFitness + (fitness - _lastFitness) / popInfo.population));
         popInfo.averageFitness += (fitness - _lastFitness) / popInfo.population;
         _lastFitness = fitness;
     }
