@@ -283,15 +283,15 @@ class GeneZombie : ZombieMan {
             SetStateLabel("Death");
 
             // when dying out, there's a chance to reproduce
-            A_Log(String.Format("Final fitness: %.2f (average: %.2f)", fitness, averageFitness));
+            A_Log(String.Format("Final fitness: %.2f (average: %.2f)", fitness, popInfo.averageFitness));
 
-            if (fitness < averageFitness) {
+            if (fitness < popInfo.averageFitness) {
                 // no replicate
                 Remove();
                 return;
             }
 
-            int replicas = log(1.0 + (fitness - averageFitness) / 2.0);
+            int replicas = log(1.0 + (fitness - popInfo.averageFitness) / 2.0);
             for (int i = 0; i < replicas; i++) {
                 NeuralNetwork replicated = nnet.replicate();
             }
