@@ -193,10 +193,15 @@ class GeneZombie : ZombieMan {
 
         popInfo = GeneZombiePopulation.Get();
 
-        agent = GeneZombieAgent.Make(self);
         fitness = 0.0;
+        _lastFitness = 0.0;
+        aimScore = 0.0;
+        hits = 0;
         lastTargetHealth = 0.0;
+        firing = false;
         ready = false;
+
+        agent = GeneZombieAgent.Make(self);
 
         if (nnet == null) {
             nnet = NeuralNetwork.Make(16, 7, 25, agent);
@@ -231,8 +236,16 @@ class GeneZombie : ZombieMan {
     }
 
     private void scoreAim() {
-        if (AbsAngle(angle, AngleTo(target)) < 15) {
+        if (target == null) {
+            return;
+        }
+    
+        if (AbsAngle(angle, AngleTo(target)) < 20) {
             aimScore += 0.04;
+        }
+
+        else if (AbsAngle(angle, AngleTo(target)) > 90) {
+            aimScore -= 0.04;
         }
     }
 
