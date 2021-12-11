@@ -7,6 +7,10 @@ Gustavo Ramos Rehermann
 This is a machine learning themed library for ZDoom ZScript, focusing
 on basic neural networks and genetic evolution therefor.
 
+If loaded as a mod, this will define a GeneZombie monster type, which
+looks a lot like a zombie (possessed human, the pistol kind), but moves
+around and, given enough time, evolves... hopefully!
+
 == Getting Started
 
 === Using as Library
@@ -31,18 +35,21 @@ Run this mod as a folder, alongside Doom 2:
 [source,console]
 ----
 git clone "https://github.com/Gustavo6046/zgenet" zgenet
-gzdoom -iwad doom2.wad -file zgenet +map map12 +kill monsters +buddha +give health 999900
+gzdoom -iwad doom2.wad -file zgenet +map map08 +
 ----
 
-Running `summon GeneZombie 180` on the console will spawn a single zombie.
+Running `summon GeneZombie 180` on the console will spawn a single zombie. This
+will also remember its starting position. Then, instantly kill it with `mdk` to
+trigger repopulation, which should spawn 100 zombies to replace it.
 
-Those zombies begin with random behaviour, but over time those whose behaviour happens
-to be able to score a shot or two at you will replicate, some of those replicas will mutate,
-while others die of old age, and hopefully what will be observed is that there will be a
-population of zombies that can aim at you decently or something.
+When first spawned, a zombie will have random behaviour, roaming around and probably
+shooting around too.
 
-Make sure to spawn many of them! This can be a little bit resource intensive, but should
-give the evolution process plenty of wiggle room to start.
+Over time, they will slowly die of old age or from battle causes.
+Once the population hits a minimal threshold, those who had
+a decent performance will "breed" new zombies (by combining from two random picks,
+the "genes" that determine each zombie's behaviour patterns), as well as a few additional
+ones being generated randomly to maintain genetic diversity.
 
 == Licensing
 
