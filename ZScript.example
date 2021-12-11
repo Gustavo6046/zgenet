@@ -101,10 +101,7 @@ class GeneZombieAgent : NNAgent {
     }
 
     override void applyOutputs(NeuralNetwork net) {
-        //A_Log("Net inputs: "..net.inputs[0].." "..net.inputs[1].." "..net.inputs[2].." "..net.inputs[3].." "..net.inputs[4].." "..net.inputs[5].." "..net.inputs[6].." "..net.inputs[7].." "..net.inputs[8].." "..net.inputs[9].." "..net.inputs[10].." "..net.inputs[11].." "..net.inputs[12]);
-        //A_Log("Net outputs: "..net.outputs[0].." "..net.outputs[1].." "..net.outputs[2].." "..net.outputs[3].." "..net.outputs[4].." "..net.outputs[5]);
-        //A_Log("Some net hiddens: "..net.hidden[0].." "..net.hidden[1].." "..net.hidden[2].." "..net.hidden[3].." "..net.hidden[4].." "..net.hidden[5].." "..net.hidden[6].." "..net.hidden[7].." "..net.hidden[8]);
-
+        // apply move
         double forward = net.outputs[1];
         double backward = net.outputs[2];
         double sideward = net.outputs[3];
@@ -123,10 +120,16 @@ class GeneZombieAgent : NNAgent {
             MyZombie.vel.y += -forward_x * (sideward - resideward) / NeuralNetwork.FIXUNIT * 4;
         }
 
-        //A_Log("zombie velocity:  "..MyZombie.vel.x.."  "..MyZombie.vel.y);
-
+        // apply turn
         MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 9 / NeuralNetwork.FIXUNIT;
 
+        // apply pitch
+        double pitchMove = (net.outputs[8] - net.outputs[9]) * 1.0 / NeuralNetwork.FIXUNIT * 2;
+
+        MyZombie.pitch += pitchMove;
+        MyZombie.pitch -= MyZombie.pitch * 0.15; // soft lookspring
+
+        // if applicable, fire!
         if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT / 2) {
             MyZombie.SetStateLabel("Missile");
         }
@@ -453,7 +456,7 @@ class GeneZombie : ZombieMan {
         agent = GeneZombieAgent.Make(self);
 
         if (nnet == null) {
-            nnet = NeuralNetwork.Make(26, 7, 25, agent);
+            nnet = NeuralNetwork.Make(26, 10, 25, agent);
 
             int numNewConns = Random(5, 200);
 
