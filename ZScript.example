@@ -266,7 +266,7 @@ class GeneZombie : ZombieMan {
             return;
         }
 
-        A_Log(String.Format("Delta fitness Df=%.2f from pop=%i update avg: %.2f + %.2f = %.2f", (fitness - _lastFitness), popInfo.population, popInfo.averageFitness, (fitness - _lastFitness) / popInfo.population, popInfo.averageFitness + (fitness - _lastFitness) / popInfo.population));
+        //A_Log(String.Format("Delta fitness Df=%.2f from pop=%i update avg: %.2f + %.2f = %.2f", (fitness - _lastFitness), popInfo.population, popInfo.averageFitness, (fitness - _lastFitness) / popInfo.population, popInfo.averageFitness + (fitness - _lastFitness) / popInfo.population));
         popInfo.averageFitness += (fitness - _lastFitness) / popInfo.population;
         _lastFitness = fitness;
     }
@@ -301,7 +301,7 @@ class GeneZombie : ZombieMan {
         nnet.update();
 
         scoreAim(); 
-        calcFitness();
+        updateFitness();
 
         // lifetime
         if (Random(0, 15) > 0) {
