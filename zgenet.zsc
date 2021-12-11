@@ -267,9 +267,84 @@ class NeuralNetwork {
         return connect(fromIdx << 2 | fromType, toIdx << 2 | toType);
     }
 
-    NeuralNetwork replicate(float netMutateChance = 25, float connMutateAmount = 0.6) {
+    static NeuralNetwork breed(NeuralNetwork mom, NeuralNetwork dad, float netMutateChance = 25, float connMutateAmount = 0.6) {
+        if (mom == null) {
+            if (dad == null) {
+                // should cause a fatal error (like an assertion error), but eh
+                return null;
+            }
+
+            return dad.replicate(netMutateChance, connMutateAmount);
+        }
+
+        if (dad == null) {
+            if (mom != null) {
+                // should cause a fatal error (like an assertion error), but eh
+                return null;
+            }
+        
+            return mom.replicate(netMutateChance, connMutateAmount);
+        }
+            
+        NeuralNetwork newNet = mom.replicate(0, 0);
+
+        if (newNet == null) {
+            return null;
+        }
+
+        int numconn_A = mom.connections.Size();
+        int numconn_B = dad.connections.Size();
+        int totNumConn = numconn_A + numconn_B;
+
+        while (newNet.connections.Size() * 4 > totNumConn) {
+            int idx = Random(0, newNet.connections.Size() - 1);
+            newNet.connections.Delete(idx);
+        }
+
+        while (newNet.connections.Size() * 2 < totNumConn) {
+            int source_idx = Random(0, dad.connections.Size() - 1);
+            newNet.connections.Push(dad.connections[source_idx].duplicate());
+        }
+
+        newNet.ApplyMutation(netMutateChance, connMutateAmount);
+
+        return newNet;
+    }
+
+    void ApplyMutation(float netMutateChance = 25, float connMutateAmount = 0.6) {
         bool bMutate = FRandom(0, 100) < netMutateChance;
 
+        if (!bMutate) {
+            return;
+        }
+
+        // Handle mutation.
+        MutateType mtype = Random(0, 3); // MNT: update whenever MutateType is changed
+        int which;
+
+        switch (mtype) {
+            case MT_CONNVALUES:
+                which = Random(0, connections.Size() - 1);
+
+                connections[which].mutateWeights(connMutateAmount);
+
+                break;
+
+            case MT_NEWCONN:
+                connectRandom();
+
+                break;
+
+            case MT_KILLCONN:
+                which = Random(0, connections.Size() - 1);
+
+                connections.Delete(which);
+
+                break;
+        }
+    }
+
+    NeuralNetwork replicate(float netMutateChance = 25, float connMutateAmount = 0.6) {
         // Make a duplicate of this network and its agent.
         NNAgent newAgent = agent.reproduce();
 
@@ -285,38 +360,10 @@ class NeuralNetwork {
             newNet.connections.Push(connections[ci].duplicate());
         }
 
-        if (!bMutate) {
-            newAgent.setNet(newNet);
-            return newNet;
-        }
-
-        // Handle mutation.
-        MutateType mtype = Random(0, 3); // MNT: update whenever MutateType is changed
-        int which;
-
-        switch (mtype) {
-            case MT_CONNVALUES:
-                which = Random(0, newNet.connections.Size() - 1);
-
-                newNet.connections[which].mutateWeights(connMutateAmount);
-
-                break;
-
-            case MT_NEWCONN:
-                newNet.connectRandom();
-
-                break;
-
-            case MT_KILLCONN:
-                which = Random(0, newNet.connections.Size() - 1);
-
-                newNet.connections.Delete(which);
-
-                break;
-        }
+        newNet.ApplyMutation(netMutateChance, connMutateAmount);
 
         newAgent.setNet(newNet);
-
+        
         return newNet;
     }
 }
