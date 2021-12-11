@@ -294,7 +294,7 @@ class GeneZombie : ZombieMan {
         counted = false;
     }
 
-    private void CountInPop() {
+    private void RecountIntoPop() {
         popInfo.population += 1;
         popInfo.averageFitness += fitness / popInfo.population;
         counted = true;
@@ -423,7 +423,7 @@ class GeneZombie : ZombieMan {
             goto Super::XDeath;
 
         Raise:
-            POSS K 0 RecountToPop;
+            POSS K 0 RecountIntoPop;
             goto Super::Raise;
     }
 }
