@@ -374,6 +374,8 @@ class GeneZombie : ZombieMan {
         nnet.update();
 
         scoreAim(); 
+        scoreSight();
+
         updateFitness();
 
         // lifetime
