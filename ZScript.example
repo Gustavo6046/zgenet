@@ -290,7 +290,7 @@ class GeneZombie : ZombieMan {
     }
 
     private void calcFitness() {
-        fitness = hits * 5;
+        fitness = hits * 2;
         fitness += health / 2;
         fitness += aimScore;
         fitness += sightScore;
