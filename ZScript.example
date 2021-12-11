@@ -311,12 +311,18 @@ class GenePopulation : Actor /* for A_Log */ {
     }
 
     bool BreedNew() {
-        int momIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
+        int maxBreeder = population - 1;
+
+        if (maxBreeder > targetPop * survivalThreshold + 1) {
+            maxBreeder = targetPop * survivalThreshold + 1;
+        }
+    
+        int momIdx = Random(0, maxBreeder);
         int dadIdx = momIdx;
 
         if (population >= 2) {
             while (dadIdx == momIdx) {
-                dadIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
+                dadIdx = Random(0, maxBreeder);
             }
         }
 
