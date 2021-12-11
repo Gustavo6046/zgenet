@@ -194,6 +194,7 @@ class GeneZombie : ZombieMan {
     bool counted;
 
     int hits;
+    int selfDamage;
     double aimScore;
     double sightScore;
 
@@ -253,6 +254,7 @@ class GeneZombie : ZombieMan {
         counted = true;
         lastFitness = 0.0;
         aimScore = 0.0;
+        selfDamage = 0;
         hits = 0;
         lastTargetHealth = 0.0;
         firing = false;
@@ -292,9 +294,16 @@ class GeneZombie : ZombieMan {
 
     private void calcFitness() {
         fitness = hits * 2;
-        fitness += health / 2;
+        fitness -= selfDamage / 2;
         fitness += aimScore;
         fitness += sightScore;
+    }
+
+    private void scoreDamage() {
+        if (health != lastSelfHealth) {
+            selfDamage += lastSelfHealth - health;
+            lastSelfHealth = health;
+        }
     }
 
     private void scoreSight() {
@@ -375,6 +384,7 @@ class GeneZombie : ZombieMan {
 
         scoreAim(); 
         scoreSight();
+        scoreDamage();
 
         updateFitness();
 
@@ -384,6 +394,7 @@ class GeneZombie : ZombieMan {
         }
 
         health -= 1;
+        lastSelfHealth -= 1;
 
         if (health <= 0) {
             // when dying out, there's a chance to reproduce
