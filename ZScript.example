@@ -313,9 +313,17 @@ class GenePopulation : Actor /* for A_Log */ {
 
     bool BreedNew() {
         int momIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
-        int dadIdx = Random(0, scoreboard.ranked.Size() * survivalThreshold);
+        int dadIdx = momIdx;
 
-        return NeuralNetwork.breed(scoreboard.ranked[momIdx].nnet, scoreboard.ranked[dadIdx].nnet) != null;
+        if (population >= 2) {
+            while (dadIdx == momIdx) {
+                Random(0, scoreboard.ranked.Size() * survivalThreshold)
+            }
+        }
+
+        bool success = NeuralNetwork.breed(scoreboard.ranked[momIdx].nnet, scoreboard.ranked[dadIdx].nnet) != null;
+        spawnSpots.Delete(spawnSpots.Size() - 1);
+        return success;
     }
 
     bool RandomNew() {
@@ -326,6 +334,7 @@ class GenePopulation : Actor /* for A_Log */ {
         Vector3 spawnPos = spawnSpots[Random(0, spawnSpots.Size() - 1)].Get();
 
         Spawn("GeneZombie", spawnPos);
+        spawnSpots.Delete(spawnSpots.Size() - 1);
 
         return true;
     }
