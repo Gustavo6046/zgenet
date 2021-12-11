@@ -197,7 +197,8 @@ class GeneZombie : ZombieMan {
     double aimScore;
     double sightScore;
 
-    double _lastFitness;
+    private double lastFitness;
+    private int lastSelfHealth;
 
     GeneZombiePopulation popInfo;
     
@@ -250,7 +251,7 @@ class GeneZombie : ZombieMan {
 
         fitness = 0.0;
         counted = true;
-        _lastFitness = 0.0;
+        lastFitness = 0.0;
         aimScore = 0.0;
         hits = 0;
         lastTargetHealth = 0.0;
@@ -321,13 +322,13 @@ class GeneZombie : ZombieMan {
     }
 
     private void updateAvgFitness() {
-        if (fitness == _lastFitness) {
+        if (fitness == lastFitness) {
             return;
         }
 
-        //A_Log(String.Format("Delta fitness Df=%.2f from pop=%i update avg: %.2f + %.2f = %.2f", (fitness - _lastFitness), popInfo.population, popInfo.averageFitness, (fitness - _lastFitness) / popInfo.population, popInfo.averageFitness + (fitness - _lastFitness) / popInfo.population));
-        popInfo.averageFitness += (fitness - _lastFitness) / popInfo.population;
-        _lastFitness = fitness;
+        //A_Log(String.Format("Delta fitness Df=%.2f from pop=%i update avg: %.2f + %.2f = %.2f", (fitness - lastFitness), popInfo.population, popInfo.averageFitness, (fitness - lastFitness) / popInfo.population, popInfo.averageFitness + (fitness - lastFitness) / popInfo.population));
+        popInfo.averageFitness += (fitness - lastFitness) / popInfo.population;
+        lastFitness = fitness;
     }
 
     void SelfState(int isReady, int isFiring = 0) {
