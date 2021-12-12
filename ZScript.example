@@ -247,7 +247,7 @@ class GenePopulation : Actor /* for A_Log */ {
     // Hyperparameters
     int targetPop;
     float bredProportion;
-    float survivalThreshold;
+    float survivalThreshold, reproductionThreshold;
 
     void Init() {
         ChangeStatNum(STAT_INFO);
@@ -258,9 +258,10 @@ class GenePopulation : Actor /* for A_Log */ {
         scoreboard = New("PopulationScoreboard");
 
         // (set hyperparameter values here)
-        targetPop = 100;
-        survivalThreshold = 0.15;
-        bredProportion = 0.75;
+        targetPop = 400;
+        survivalThreshold = 0.1;
+        reproductionThreshold = 0.15;
+        bredProportion = 0.8;
     }
 
     static GenePopulation Get() {
@@ -303,7 +304,7 @@ class GenePopulation : Actor /* for A_Log */ {
     }
 
     void CullUndesirable() {
-        int cullIndex = scoreboard.ranked.Size() * survivalThreshold + 1;
+        int cullIndex = scoreboard.ranked.Size() * reproductionThreshold + 1;
     
         while (cullIndex < scoreboard.ranked.Size()) {
             RemoveZombie(scoreboard.ranked[cullIndex]);
@@ -471,9 +472,9 @@ class GeneZombie : ZombieMan {
         agent = GeneZombieAgent.Make(self);
 
         if (nnet == null) {
-            nnet = NeuralNetwork.Make(26, 10, 25, agent);
+            nnet = NeuralNetwork.Make(26, 10, 40, agent);
 
-            int numNewConns = Random(5, 200);
+            int numNewConns = Random(15, 60);
 
             for (int i = 0; i < numNewConns; i++) {
                 Connection conn = nnet.connectRandom();
@@ -617,7 +618,7 @@ class GeneZombie : ZombieMan {
         updateFitness();
 
         // lifetime
-        if (Random(0, 15) > 0) {
+        if (Random(0, 10) > 0) {
             return;
         }
 
