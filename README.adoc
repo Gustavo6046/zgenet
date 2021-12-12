@@ -35,7 +35,7 @@ Run this mod as a folder, alongside Doom 2:
 [source,console]
 ----
 git clone "https://github.com/Gustavo6046/zgenet" zgenet
-gzdoom -iwad doom2.wad -file zgenet +map map08 +
+gzdoom -iwad doom2.wad -file zgenet +map map30 +notarget +noclip +god
 ----
 
 Running `summon GeneZombie 180` on the console will spawn a single zombie. This
