@@ -85,20 +85,20 @@ class ZGN_NeuralNetwork {
 
         switch (type) {
             case NEU_INPUTS:
-            value = inputs[index];
-            break;
+                value = inputs[index];
+                break;
 
             case NEU_OUTPUTS:
-            value = outputs[index];
-            break;
+                value = outputs[index];
+                break;
 
             case NEU_HIDDEN:
-            value = hidden[index];
-            break;
+                value = hidden[index];
+                break;
 
             case NEU_ZERO:
-            value = 0;
-            break;
+                value = 0;
+                break;
         }
     }
 
@@ -108,19 +108,19 @@ class ZGN_NeuralNetwork {
 
         switch (type) {
             case NEU_INPUTS:
-            inputs[index] = newValue;
-            break;
+                inputs[index] = newValue;
+                break;
 
             case NEU_OUTPUTS:
-            outputs[index] = newValue;
-            break;
+                outputs[index] = newValue;
+                break;
 
             case NEU_HIDDEN:
-            hidden[index] = newValue;
-            break;
+                hidden[index] = newValue;
+                break;
 
             case NEU_ZERO:
-            break;
+                break;
         }
     }
 
@@ -130,19 +130,19 @@ class ZGN_NeuralNetwork {
 
         switch (type) {
             case NEU_INPUTS:
-            inputs[index] += addValue;
-            break;
+                inputs[index] += addValue;
+                break;
 
             case NEU_OUTPUTS:
-            outputs[index] += addValue;
-            break;
+                outputs[index] += addValue;
+                break;
 
             case NEU_HIDDEN:
-            hidden[index] += addValue;
-            break;
+                hidden[index] += addValue;
+                break;
 
             case NEU_ZERO:
-            break;
+                break;
         }
     }
 
