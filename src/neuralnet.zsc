@@ -268,6 +268,12 @@ class ZGN_NeuralNetwork {
         return connect(fromIdx << 2 | fromType, toIdx << 2 | toType);
     }
 
+    void connectRandomMany(int howMany) {
+        for (int i = 0; i < howMany; i++) {
+            connectRandom();
+        }
+    }
+
     static ZGN_NeuralNetwork breed(ZGN_NeuralNetwork mom, ZGN_NeuralNetwork dad, float netMutateChance = 25, float connMutateAmount = 0.6) {
         if (mom == null) {
             if (dad == null) {
