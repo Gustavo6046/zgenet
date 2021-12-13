@@ -48,6 +48,7 @@ class ZGN_NeuralNetwork {
 
     Array<int> inputs, outputs, hidden;
     Array<int> newHidden;
+    Array<int> alreadyConnected;
     Array<ZGN_Connection> connections;
 
     static ZGN_NeuralNetwork make_random_like(ZGN_NeuralNetwork reference) {
@@ -160,6 +161,21 @@ class ZGN_NeuralNetwork {
         }
     }
 
+    bool AddConnection(ZGN_Connection conn) {
+        if (alreadyConnected.Find(conn.from << 16 || conn.to) != -1) {
+            return false;
+        }
+
+        connections.Push(conn);
+        return true;
+    }
+
+    void RemoveConnection(int which) {
+        let conn = connections[which];
+        alreadyConnected.Delete(alreadyConnected.Find(conn.from << 16 || conn.to));
+        connections.Delete(which);
+    }
+
     ZGN_Connection connect(int from, int to) {
         ZGN_NeuronType fromType = from & 0x3;
         ZGN_NeuronType toType = to & 0x3;
@@ -169,7 +185,7 @@ class ZGN_NeuralNetwork {
         }
 
         ZGN_Connection newConn = ZGN_Connection.make(from, to, FRandom(-4, 4) * FIXUNIT, FRandom(-1, 1) * FIXUNIT);
-        connections.Push(newConn);
+        AddConnection(newConn);
 
         return newConn;
     }
@@ -309,23 +325,22 @@ class ZGN_NeuralNetwork {
 
         switch (mtype) {
             case MT_CONNVALUES:
-            which = Random(0, connections.Size() - 1);
+                which = Random(0, connections.Size() - 1);
 
-            connections[which].mutateWeights(connMutateAmount);
+                connections[which].mutateWeights(connMutateAmount);
 
-            break;
+                break;
 
             case MT_NEWCONN:
-            connectRandom();
+                connectRandom();
 
-            break;
+                break;
 
             case MT_KILLCONN:
-            which = Random(0, connections.Size() - 1);
+                which = Random(0, connections.Size() - 1);
+                RemoveConnection(which);
 
-            connections.Delete(which);
-
-            break;
+                break;
         }
     }
 
