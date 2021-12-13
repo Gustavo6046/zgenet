@@ -1,12 +1,12 @@
 #include "zgenet.zsc"
-
+/*
 class GeneZombieAgent : NNAgent {
     GeneZombie MyZombie;
     int age;
 
     static GeneZombieAgent Make(GeneZombie owner) {
         GeneZombieAgent agent = GeneZombieAgent(Spawn("GeneZombieAgent"));
-    
+
         agent.MyZombie = owner;
 
         return agent;
@@ -14,19 +14,19 @@ class GeneZombieAgent : NNAgent {
 
     //=====
 
-    override void refreshInputs(NeuralNetwork net) {
-        net.inputs[0] = MyZombie.health * NeuralNetwork.FIXUNIT / MyZombie.SpawnHealth();
+    override void refreshInputs(ZGN_NeuralNetwork net) {
+        net.inputs[0] = MyZombie.health * ZGN_NeuralNetwork.FIXUNIT / MyZombie.SpawnHealth();
 
         double ageval = age;
         ageval /= 80.0;
 
         // oscillator neurons
-        net.inputs[8] = sin(ageval) * NeuralNetwork.FIXUNIT;
-        net.inputs[9] = sin(ageval / 8) * NeuralNetwork.FIXUNIT;
+        net.inputs[8] = sin(ageval) * ZGN_NeuralNetwork.FIXUNIT;
+        net.inputs[9] = sin(ageval / 8) * ZGN_NeuralNetwork.FIXUNIT;
 
         // am firing?
-        net.inputs[15] = (MyZombie.firing ? NeuralNetwork.FIXUNIT : 0);
-        
+        net.inputs[15] = (MyZombie.firing ? ZGN_NeuralNetwork.FIXUNIT : 0);
+
         if (MyZombie.target == null) {
             net.inputs[1] = 0;
 
@@ -51,33 +51,33 @@ class GeneZombieAgent : NNAgent {
             double fromEnemyAng = atan2(-enemyOffs.y, -enemyOffs.x);
 
             // offset of self aim from enemy
-            net.inputs[1] = DeltaAngle(MyZombie.angle, toEnemyAng) * NeuralNetwork.FIXUNIT / 100;
+            net.inputs[1] = DeltaAngle(MyZombie.angle, toEnemyAng) * ZGN_NeuralNetwork.FIXUNIT / 100;
 
             // enemy health
-            net.inputs[2] = MyZombie.target.health * NeuralNetwork.FIXUNIT / MyZombie.target.SpawnHealth();
-            net.inputs[3] = (MyZombie.target.SpawnHealth() - MyZombie.target.health) * NeuralNetwork.FIXUNIT / MyZombie.target.SpawnHealth();
+            net.inputs[2] = MyZombie.target.health * ZGN_NeuralNetwork.FIXUNIT / MyZombie.target.SpawnHealth();
+            net.inputs[3] = (MyZombie.target.SpawnHealth() - MyZombie.target.health) * ZGN_NeuralNetwork.FIXUNIT / MyZombie.target.SpawnHealth();
 
             // enemy visible
-            net.inputs[4] = MyZombie.CheckSight(MyZombie.target) ? NeuralNetwork.FIXUNIT : 0;
-            net.inputs[12] = MyZombie.CheckSight(MyZombie.target) ? 0 : NeuralNetwork.FIXUNIT;
+            net.inputs[4] = MyZombie.CheckSight(MyZombie.target) ? ZGN_NeuralNetwork.FIXUNIT : 0;
+            net.inputs[12] = MyZombie.CheckSight(MyZombie.target) ? 0 : ZGN_NeuralNetwork.FIXUNIT;
 
             // enemy in self sights
-            net.inputs[5] = 30 * NeuralNetwork.FIXUNIT / (8 + AbsAngle(MyZombie.angle, toEnemyAng) / 1.2);
+            net.inputs[5] = 30 * ZGN_NeuralNetwork.FIXUNIT / (8 + AbsAngle(MyZombie.angle, toEnemyAng) / 1.2);
 
             // self in enemy sights
-            net.inputs[6] = 40 * NeuralNetwork.FIXUNIT / (10 + AbsAngle(MyZombie.target.angle, fromEnemyAng) / 1.5);
+            net.inputs[6] = 40 * ZGN_NeuralNetwork.FIXUNIT / (10 + AbsAngle(MyZombie.target.angle, fromEnemyAng) / 1.5);
 
             // has enemy at all
-            net.inputs[7] = NeuralNetwork.FIXUNIT;
+            net.inputs[7] = ZGN_NeuralNetwork.FIXUNIT;
 
             // distance and nearness from enemy
-            net.inputs[10] = MyZombie.Distance2D(MyZombie.target) * NeuralNetwork.FIXUNIT / 1024;
-            net.inputs[11] = (1024.0 / (500 + MyZombie.Distance2D(MyZombie.target)) * 1.5) * NeuralNetwork.FIXUNIT;
+            net.inputs[10] = MyZombie.Distance2D(MyZombie.target) * ZGN_NeuralNetwork.FIXUNIT / 1024;
+            net.inputs[11] = (1024.0 / (500 + MyZombie.Distance2D(MyZombie.target)) * 1.5) * ZGN_NeuralNetwork.FIXUNIT;
 
             // velocity (fast and slow, respectively)
             double velforce = sqrt((MyZombie.vel.x * MyZombie.vel.x) + (MyZombie.vel.y * MyZombie.vel.y));
-            net.inputs[13] = velforce * NeuralNetwork.FIXUNIT / 5;
-            net.inputs[14] = (8.0 / (1.0 + velforce)) * NeuralNetwork.FIXUNIT / 5;
+            net.inputs[13] = velforce * ZGN_NeuralNetwork.FIXUNIT / 5;
+            net.inputs[14] = (8.0 / (1.0 + velforce)) * ZGN_NeuralNetwork.FIXUNIT / 5;
         }
 
         // == lookAhead inputs
@@ -85,22 +85,22 @@ class GeneZombieAgent : NNAgent {
         inputLookAhead(net, 1200, 21);
     }
 
-    private void inputLookAhead(NeuralNetwork net, double distance, int offset) {
+    private void inputLookAhead(ZGN_NeuralNetwork net, double distance, int offset) {
         bool bWall;.
         bool bTarget;
         bool bFriend;
         double proximity;
 
         MyZombie.lookAhead(bWall, bTarget, bFriend, proximity, distance);
-        
-        net.inputs[offset] = (bWall ? NeuralNetwork.FIXUNIT : 0);
-        net.inputs[offset + 1] = (bTarget ? NeuralNetwork.FIXUNIT : 0);
-        net.inputs[offset + 2] = (bFriend ? NeuralNetwork.FIXUNIT : 0);
-        net.inputs[offset + 3] = proximity * NeuralNetwork.FIXUNIT;
-        net.inputs[offset + 4] = (1.0 - proximity) * NeuralNetwork.FIXUNIT;
+
+        net.inputs[offset] = (bWall ? ZGN_NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 1] = (bTarget ? ZGN_NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 2] = (bFriend ? ZGN_NeuralNetwork.FIXUNIT : 0);
+        net.inputs[offset + 3] = proximity * ZGN_NeuralNetwork.FIXUNIT;
+        net.inputs[offset + 4] = (1.0 - proximity) * ZGN_NeuralNetwork.FIXUNIT;
     }
 
-    override void applyOutputs(NeuralNetwork net) {
+    override void applyOutputs(ZGN_NeuralNetwork net) {
         // apply move
         double forward = net.outputs[1];
         double backward = net.outputs[2];
@@ -110,36 +110,36 @@ class GeneZombieAgent : NNAgent {
         double forward_x = cos(MyZombie.angle);
         double forward_y = sin(MyZombie.angle);
 
-        if (abs(forward - backward) > NeuralNetwork.FIXUNIT / 5) {
-            MyZombie.vel.x += forward_x * (forward - backward) / NeuralNetwork.FIXUNIT * 4;
-            MyZombie.vel.y += forward_y * (forward - backward) / NeuralNetwork.FIXUNIT * 4;
+        if (abs(forward - backward) > ZGN_NeuralNetwork.FIXUNIT / 5) {
+            MyZombie.vel.x += forward_x * (forward - backward) / ZGN_NeuralNetwork.FIXUNIT * 4;
+            MyZombie.vel.y += forward_y * (forward - backward) / ZGN_NeuralNetwork.FIXUNIT * 4;
         }
 
-        if (abs(sideward - resideward) > NeuralNetwork.FIXUNIT / 7) {
-            MyZombie.vel.x += forward_y * (sideward - resideward) / NeuralNetwork.FIXUNIT * 4;
-            MyZombie.vel.y += -forward_x * (sideward - resideward) / NeuralNetwork.FIXUNIT * 4;
+        if (abs(sideward - resideward) > ZGN_NeuralNetwork.FIXUNIT / 7) {
+            MyZombie.vel.x += forward_y * (sideward - resideward) / ZGN_NeuralNetwork.FIXUNIT * 4;
+            MyZombie.vel.y += -forward_x * (sideward - resideward) / ZGN_NeuralNetwork.FIXUNIT * 4;
         }
 
         // apply turn
-        MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 9 / NeuralNetwork.FIXUNIT;
+        MyZombie.angle += (net.outputs[0] - net.outputs[6]) * 9 / ZGN_NeuralNetwork.FIXUNIT;
 
         // apply pitch
-        double pitchMove = (net.outputs[8] - net.outputs[9]) * 1.0 / NeuralNetwork.FIXUNIT * 2;
+        double pitchMove = (net.outputs[8] - net.outputs[9]) * 1.0 / ZGN_NeuralNetwork.FIXUNIT * 2;
 
         MyZombie.pitch += pitchMove;
         MyZombie.pitch -= MyZombie.pitch * 0.15; // soft lookspring
 
         // if applicable, fire!
-        if (MyZombie.ready && net.outputs[5] > NeuralNetwork.FIXUNIT * 3 / 4) {
+        if (MyZombie.ready && net.outputs[5] > ZGN_NeuralNetwork.FIXUNIT * 3 / 4) {
             MyZombie.SetStateLabel("Missile");
         }
     }
 
-    override void setNet(NeuralNetwork newNet) {
+    override void setNet(ZGN_NeuralNetwork newNet) {
         if (MyZombie.nnet != null) {
             MyZombie.nnet.Destroy();
         }
-    
+
         MyZombie.nnet = newNet;
     }
 
@@ -235,7 +235,7 @@ class Vector3V {
     }
 }
 
-class GenePopulation : Actor /* for A_Log */ {
+class GenePopulation : Actor {
     double averageFitness;
     int population;
     Array<GeneZombie> zombies;
@@ -243,7 +243,7 @@ class GenePopulation : Actor /* for A_Log */ {
     int generation;
 
     PopulationScoreboard scoreboard;
-    
+
     // Hyperparameters
     int targetPop;
     float bredProportion;
@@ -278,7 +278,7 @@ class GenePopulation : Actor /* for A_Log */ {
 
     void RemoveZombie(GeneZombie zomb) {
         zombies.Delete(zombies.Find(zomb));
-        
+
         int scoreIdx = scoreboard.ranked.Find(zomb);
         scoreboard.ranked.Delete(scoreIdx);
         scoreboard.fitnesses.Delete(scoreIdx);
@@ -305,7 +305,7 @@ class GenePopulation : Actor /* for A_Log */ {
 
     void CullUndesirable() {
         int cullIndex = scoreboard.ranked.Size() * reproductionThreshold + 1;
-    
+
         while (cullIndex < scoreboard.ranked.Size()) {
             RemoveZombie(scoreboard.ranked[cullIndex]);
         }
@@ -317,7 +317,7 @@ class GenePopulation : Actor /* for A_Log */ {
         if (maxBreeder > targetPop * survivalThreshold + 1) {
             maxBreeder = targetPop * survivalThreshold + 1;
         }
-    
+
         int momIdx = Random(0, maxBreeder);
         int dadIdx = momIdx;
 
@@ -327,7 +327,7 @@ class GenePopulation : Actor /* for A_Log */ {
             }
         }
 
-        bool success = NeuralNetwork.breed(scoreboard.ranked[momIdx].nnet, scoreboard.ranked[dadIdx].nnet) != null;
+        bool success = ZGN_NeuralNetwork.breed(scoreboard.ranked[momIdx].nnet, scoreboard.ranked[dadIdx].nnet) != null;
         spawnSpots.Delete(spawnSpots.Size() - 1);
         return success;
     }
@@ -391,7 +391,7 @@ class GenePopulation : Actor /* for A_Log */ {
 
 class GeneZombie : ZombieMan {
     GeneZombieAgent agent;
-    NeuralNetwork nnet;
+    ZGN_NeuralNetwork nnet;
     bool ready;
     bool firing;
     int lastTargetHealth;
@@ -407,7 +407,7 @@ class GeneZombie : ZombieMan {
     private int lastSelfHealth;
 
     GenePopulation popInfo;
-    
+
 
     default {
         +THRUSPECIES;
@@ -472,12 +472,12 @@ class GeneZombie : ZombieMan {
         agent = GeneZombieAgent.Make(self);
 
         if (nnet == null) {
-            nnet = NeuralNetwork.Make(26, 10, 40, agent);
+            nnet = ZGN_NeuralNetwork.Make(26, 10, 40, agent);
 
             int numNewConns = Random(15, 60);
 
             for (int i = 0; i < numNewConns; i++) {
-                Connection conn = nnet.connectRandom();
+                ZGN_Connection conn = nnet.connectRandom();
                 if (conn == null) continue;
             }
 
@@ -518,7 +518,7 @@ class GeneZombie : ZombieMan {
         if (target == null) {
             return;
         }
-    
+
         if (!CheckSight(target)) {
             sightScore -= 0.07;
         }
@@ -528,7 +528,7 @@ class GeneZombie : ZombieMan {
         if (target == null) {
             return;
         }
-    
+
         if (AbsAngle(angle, AngleTo(target)) < 20) {
             aimScore += 0.04;
         }
@@ -575,7 +575,7 @@ class GeneZombie : ZombieMan {
     private void RecountIntoPop() {
         popInfo.population += 1;
 
-        if (popInfo.population > 0) {        
+        if (popInfo.population > 0) {
             popInfo.averageFitness += fitness / popInfo.population;
         }
 
@@ -600,18 +600,18 @@ class GeneZombie : ZombieMan {
             SetStateLabel("Death");
             return;
         }
-    
+
         if (nnet == null) {
             return;
         }
-    
+
         if (!ready) {
             return;
         }
 
         nnet.update();
 
-        scoreAim(); 
+        scoreAim();
         scoreSight();
         scoreDamage();
 
@@ -642,7 +642,7 @@ class GeneZombie : ZombieMan {
 
             int replicas = log(1.0 + (fitness - popInfo.averageFitness) / 2.0);
             for (int i = 0; i < replicas; i++) {
-                NeuralNetwork replicated = nnet.replicate();
+                ZGN_NeuralNetwork replicated = nnet.replicate();
             }
 
             Remove();
@@ -677,7 +677,7 @@ class GeneZombie : ZombieMan {
             double spawndist = FRandom(radius * 2, 220);
             SpawnOffs.x = cos(spawnang) * spawndist;
             SpawnOffs.y = sin(spawnang) * spawndist;
-            
+
             newZombie = GeneZombie(Spawn("GeneZombie", pos + SpawnOffs));
         }
 
@@ -747,3 +747,4 @@ class GeneZombie : ZombieMan {
             goto Super::Raise;
     }
 }
+*/

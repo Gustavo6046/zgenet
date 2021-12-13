@@ -1,0 +1,92 @@
+class ZGN_AgentProvider : Actor abstract {
+    abstract void RefreshInputs(ZGN_NeuralNetwork net);
+    abstract void ApplyOutputs(ZGN_NeuralNetwork net);
+    abstract Actor GetActor();
+    abstract double GetFitness();
+
+    abstract bool IsAlive();
+    abstract void Kill();
+
+    virtual void Remove() {
+        GetActor().Destroy();
+    }
+
+    abstract ZGN_AgentProvider Reproduce(ZGN_SpawningStrategy spawnStrat);
+}
+
+class ZGN_Agent {
+    ZGN_AgentProvider impl;
+    ZGN_NeuralNetwork net;
+
+    static ZGN_Agent Make(ZGN_AgentProvider impl, ZGN_NeuralNetwork net) {
+        let agent = ZGN_Agent(new("ZGN_Agent"));
+        agent.impl = impl;
+        agent.net = net;
+
+        return agent;
+    }
+
+    void Update() {
+        impl.RefreshInputs(net);
+
+        net.process_values();
+
+        impl.ApplyOutputs(net);
+    }
+
+    Actor GetActor() {
+        return impl.GetActor();
+    }
+
+    ZGN_Agent ReproduceWithNet(ZGN_NeuralNetwork new_net, ZGN_SpawningStrategy spawnStrat) {
+        ZGN_AgentProvider replica = impl.Reproduce(spawnStrat);
+
+        if (replica == null) {
+            return null;
+        }
+
+        return ZGN_Agent.make(replica, new_net);
+    }
+
+    static ZGN_Agent Breed(ZGN_Agent mom, ZGN_Agent dad, float netMutateChance = 25, float connMutateAmount = 0.6, ZGN_SpawningStrategy spawnStrat) {
+        ZGN_AgentProvider replica = mom.impl.Reproduce(spawnStrat);
+
+        if (replica == null) {
+            return null;
+        }
+
+        ZGN_NeuralNetwork new_net = ZGN_NeuralNetwork.breed(mom.net, dad.net, netMutateChance, connMutateAmount) ;
+
+        if (new_net == null) {
+            return null;
+        }
+
+        return ZGN_Agent.make(replica, new_net);
+    }
+
+    ZGN_Agent ReproduceRandomNet(ZGN_SpawningStrategy spawnStrat) {
+        ZGN_AgentProvider replica = impl.Reproduce(spawnStrat);
+
+        if (replica == null) {
+            return null;
+        }
+
+        return ZGN_Agent.make(replica, ZGN_NeuralNetwork.make_random_like());
+    }
+
+    double GetFitness() {
+        return impl.GetFitness();
+    }
+
+    bool IsAlive() {
+        return impl.IsAlive();
+    }
+
+    void Kill() {
+        return impl.Kill();
+    }
+
+    void Remove() {
+        return impl.Remove();
+    }
+}

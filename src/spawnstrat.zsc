@@ -1,0 +1,49 @@
+private class Vector3V {
+    Vector3 val;
+
+    Vector3 Get() {
+        return val;
+    }
+
+    void Set(Vector3 newVal) {
+        val = newVal;
+    }
+
+    static Vector3V Make(Vector3 val) {
+        let v3v = Vector3V(New("Vector3V"));
+        v3v.val = val;
+
+        return v3v;
+    }
+}
+
+
+abstract class ZGN_SpawningStrategy {
+    abstract void RegisterSpot(Vector3 spot);
+    abstract Vector3 NextSpawnPos();
+    abstract void Reset();
+
+    void OnDestroy() {
+        Reset();
+    }
+}
+
+class ZGN_DefaultSpawningStrategy : ZGN_SpawningStrategy {
+    Array<Vector3V> initialSpots;
+
+    override void RegisterSpot(Vector3 spot) {
+        initialSpots.Push(Vector3V.Make(spot));
+    }
+
+    void Reset() {
+        for (int i = 0; i < initialSpots.Size(); i++) {
+            initialSpots[i].Destroy();
+        }
+
+        initialSpots.Clear();
+    }
+
+    virtual Vector3 NextSpawnPos() {
+        return initialSpots[Random(0, initialSpots.Size() - 1)];
+    }
+}

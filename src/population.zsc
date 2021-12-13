@@ -1,0 +1,231 @@
+private class ZGN_PopulationScoreboard {
+    Array<ZGN_Agent> ranked;
+    Array<double> fitnesses;
+
+    bool IsSorted() {
+        double earlier = fitnesses[0];
+        int i = 1;
+
+        while (i < fitnesses.Size()) {
+            if (fitnesses[i] > earlier) {
+                return false;
+            }
+
+            earlier = fitnesses[i];
+            i++;
+        }
+
+        return true;
+    }
+
+    void UpdateFitnesses() {
+        for (int i = 0; i < ranked.Size(); i++) {
+            fitnesses[i] = ranked[i].GetFitness();
+        }
+
+        Sort();
+    }
+
+    void Sort() {
+        bool sorted = false;
+
+        while (!sorted) {
+            sorted = true;
+
+            for (int swapPos = 0; swapPos < fitnesses.Size() - 1; swapPos++) {
+                double earlier = fitnesses[swapPos];
+
+                if (earlier > fitnesses[swapPos + 1]) {
+                    sorted = false; // more sorting may be necessary
+
+                    fitnesses[swapPos] = fitnesses[swapPos + 1];
+                    fitnesses[swapPos + 1] = earlier;
+
+                    let earlierVal = ranked[swapPos];
+                    ranked[swapPos] = ranked[swapPos + 1];
+                    ranked[swapPos + 1] = earlierVal;
+                }
+            }
+        }
+    }
+}
+
+class ZGN_Population : Thinker {
+    Class<ZGN_Agent> agentType;
+    ZGN_SpawningStrategy spawnStrat;
+
+    double averageFitness;
+    int population;
+    Array<ZGN_Agent> agents;
+    int generation;
+
+    ZGN_PopulationScoreboard scoreboard;
+
+    // Hyperparameters
+    int targetPop;
+    float bredRepopulation;
+    float survivalThreshold, reproductionThreshold;
+
+    void ConfigureSpawning(Class<ZGN_SpawningStrategy> newSpawnStrat) {
+        if (spawnStrat != null) {
+            spawnStrat.Destroy();
+        }
+
+        spawnStrat = ZGN_SpawningStrategy(new(newSpawnStrat));
+    }
+
+    void ConfigureHyperparameters(int targetPop, float bredPoportion, float survivalThreshold, float reproductionThreshold) {
+        self.targetPop = targetPop;
+        self.bredRepopulation = bredRepopulation;
+        self.survivalThreshold = survivalThreshold;
+        self.reproductionThreshold = reproductionThreshold;
+    }
+
+    void Init(Class<ZGN_Agent> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+        ChangeStatNum(STAT_INFO);
+
+        averageFitness = 0;
+        population = 0;
+        generation = 1;
+        scoreboard = New("ZGN_PopulationScoreboard");
+
+        // (set hyperparameter values here)
+        ConfigureHyperparameters(400, 0.8, 0.1, 0.15);
+        CofnigureSpawning(spawnStratType);
+
+        self.agentType = agentType;
+    }
+
+    static ZGN_Population Get(Class<ZGN_Agent> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+        ThinkerIterator it = ThinkerIterator.Create("ZGN_Population", STAT_INFO);
+        ZGN_Population p;
+
+        while ((p = ZGN_Population(it.Next())) != null) {
+            if (p.agentType == agentType && p.spawnStrat != null && p.spawnStrat.CheckClass(spawnStratType)) {
+                break;
+            }
+        }
+
+        if (p == null) {
+            p = ZGN_Population(Spawn("ZGN_Population"));
+            p.Init(agentType, spawnStratType);
+        }
+
+        return p;
+    }
+
+    void RemoveAgent(ZGN_Agent agent) {
+        agents.Delete(agents.Find(agent));
+
+        int scoreIdx = scoreboard.ranked.Find(agent);
+        scoreboard.ranked.Delete(scoreIdx);
+        scoreboard.fitnesses.Delete(scoreIdx);
+    }
+
+    void AddAgent(ZGN_Agent agent, bool bSort = true) {
+        scoreboard.ranked.Push(agent);
+        scoreboard.fitnesses.Push(agent.GetFitness());
+
+        if (bSort) {
+            scoreboard.Sort();
+        }
+    }
+
+    void KillLivingAgents() {
+        for (int i = 0; i < agents.Size(); i++) {
+            if (agents[i].Alive()) {
+                agents[i].Kill();
+                // let ActivateBrain lead to the Death state;
+                // don't jump to it now, otherwise it will
+                // call UncountFromPop and mess things up
+            }
+        }
+    }
+
+    void CullUndesirable() {
+        int cullIndex = scoreboard.ranked.Size() * reproductionThreshold + 1;
+
+        while (cullIndex < scoreboard.ranked.Size()) {
+            let agent = scoreboard.ranked[cullIndex];
+            RemoveAgent(agent);
+            agent.Remove();
+        }
+    }
+
+    bool BreedNew() {
+        int maxBreeder = population - 1;
+
+        if (maxBreeder > targetPop * survivalThreshold + 1) {
+            maxBreeder = targetPop * survivalThreshold + 1;
+        }
+
+        int momIdx = Random(0, maxBreeder);
+        int dadIdx = momIdx;
+
+        if (population >= 2) {
+            while (dadIdx == momIdx) {
+                dadIdx = Random(0, maxBreeder);
+            }
+        }
+
+        bool success = ZGN_Agent.breed(scoreboard.ranked[momIdx], scoreboard.ranked[dadIdx], spawnStrat) != null;
+        spawnSpots.Delete(spawnSpots.Size() - 1);
+        return success;
+    }
+
+    bool RandomNew() {
+        if (spawnSpots.Size() == 0) {
+            return false;
+        }
+
+        Vector3 spawnPos = spawnSpots[Random(0, spawnSpots.Size() - 1)].Get();
+
+        Spawn("ZGN_Agent", spawnPos);
+        spawnSpots.Delete(spawnSpots.Size() - 1);
+
+        return true;
+    }
+
+    void Repopulate() {
+        if (population > targetPop * survivalThreshold && population > 0) {
+            return;
+        }
+
+        generation += 1;
+
+        //KillLivingAgents();
+
+        scoreboard.UpdateFitnesses();
+        CullUndesirable();
+
+        int bredPop = targetPop * bredRepopulation;
+
+        A_Log(
+            String.Format("Repopulating agents; generation %i is done (will breed %i more and create %i random)",
+                generation,
+                bredPop - population - (population >= 2 ? 0 : (2 - population)),
+                targetPop - bredPop + (population >= 2 ? 0 : (2 - population)))
+        );
+
+        while (population < 2) {
+            if (!RandomNew()) {
+                A_Log("heck");
+                return;
+            }
+        }
+
+        while (population < bredPop) {
+            if (!BreedNew()) {
+                A_Log("heck");
+                break;
+            }
+        }
+
+        while (population < targetPop) {
+            if (!RandomNew()) {
+                A_Log("heck");
+                break;
+            }
+        }
+    }
+}

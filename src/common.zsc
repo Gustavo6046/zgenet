@@ -1,0 +1,3 @@
+class ZGenet {
+  const FIXUNIT = 32768;
+}
