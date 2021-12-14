@@ -1,4 +1,4 @@
-class ZGN_AgentProvider : Actor abstract {
+class ZGN_AgentProvider abstract {
     abstract void RefreshInputs(ZGN_NeuralNetwork net);
     abstract void ApplyOutputs(ZGN_NeuralNetwork net);
     abstract Actor GetActor();
