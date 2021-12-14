@@ -1,4 +1,4 @@
-private class ZGN_PopulationScoreboard {
+class ZGN_PopulationScoreboard {
     Array<ZGN_Agent> ranked;
     Array<double> fitnesses;
 
