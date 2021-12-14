@@ -43,7 +43,7 @@ class ZGN_DefaultSpawningStrategy : ZGN_SpawningStrategy {
         initialSpots.Clear();
     }
 
-    virtual Vector3 NextSpawnPos() {
-        return initialSpots[Random(0, initialSpots.Size() - 1)];
+    override Vector3 NextSpawnPos() {
+        return initialSpots[Random(0, initialSpots.Size() - 1)].val;
     }
 }
