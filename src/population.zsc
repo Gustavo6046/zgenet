@@ -55,8 +55,10 @@ class ZGN_Population : Thinker {
     ZGN_SpawningStrategy spawnStrat;
 
     double averageFitness;
+    int countedFitnesses;
     int population;
     Array<ZGN_Agent> agents;
+    Array<bool> activated;
     int generation;
 
     ZGN_PopulationScoreboard scoreboard;
@@ -128,20 +130,99 @@ class ZGN_Population : Thinker {
     }
 
     void RemoveAgent(ZGN_Agent agent) {
-        agents.Delete(agents.Find(agent));
+        let oldfit = agent.GetFitness();
+        let idx = agents.Find(agent);
+
+        agents.Delete(idx);
+        activated.Delete(idx);
 
         int scoreIdx = scoreboard.ranked.Find(agent);
         scoreboard.ranked.Delete(scoreIdx);
         scoreboard.fitnesses.Delete(scoreIdx);
+
+        RemoveAverageFitness(oldfit);
+        Repopulate();
+    }
+
+    private void UpdateAverageFitness(double from, double to, int asHowMany = 1) {
+        averageFitness = (averageFitness * countedFitnesses + (to - from) * asHowMany) / countedFitnesses;
+    }
+
+    void UpdateFitness(ZGN_Agent agent) {
+        let scoreIdx = scoreboard.ranked.index(agent);
+        let oldFit = scoreboard.fitnesses[scoreIdx];
+        let newFit = agent.GetFitness();
+
+        if (oldFit != newFit) {
+            scoreboard.fitnesses[scoreIdx] = newFit;
+            UpdateAverageFitness(oldFit, newFit);
+            Sort();
+        }
+    }
+
+    void AddAverageFitness(double counted) {
+        averageFitness = (averageFitness * countedFitnesses + counted) / (countedFitnesses + 1);
+        countedFitnesses += 1;
+    }
+
+    void RemoveAverageFitness(double uncounted) {
+        let prevNum = countedFitnesses;
+
+        if (prevNum <= 1) {
+            countedFitnesses = 0;
+            averageFitness = 0;
+        }
+
+        else {
+            countedFitnesses -= 1;
+            averageFitness = (averageFitness * prevNum - uncounted) / countedFitnesses;
+        }
     }
 
     void AddAgent(ZGN_Agent agent, bool bSort = true) {
+        let fitness = agent.GetFitness();
+        let prevNum = agents.Size();
+
+        agents.Push(agent);
+        activated.Push(true);
+        num_activated++;
+
         scoreboard.ranked.Push(agent);
-        scoreboard.fitnesses.Push(agent.GetFitness());
+        scoreboard.fitnesses.Push(fitness);
+
+        AddAverageFitness(fitness);
 
         if (bSort) {
             scoreboard.Sort();
         }
+    }
+
+    void Activate(ZGN_Agent agent) {
+        let idx = agents.Find(agent);
+
+        if (activated[idx]) {
+            return;
+        }
+
+        activated[idx] = true;
+        num_activated++;
+
+        scoreboard.ranked.Push(agent);
+        scoreboard.fitnesses.Push(agent.GetFitness());
+        Sort();
+    }
+
+    void Deactivate(ZGN_Agent agent) {
+        let idx = agents.Find(agent);
+
+        if (!activated[idx]) {
+            return;
+        }
+
+        activated[idx] = false;
+        num_activated--;
+
+        Repopulate();
     }
 
     void KillLivingAgents() {
@@ -188,6 +269,31 @@ class ZGN_Population : Thinker {
         return success;
     }
 
+    void UpdateFitnesses() {
+        averageFitness = 0;
+        int count = 0;
+
+        for (int i = 0; i < agents.Size(); i++) {
+
+            let agent = agents[i];
+            let fitness = agent.GetFitness();
+            let scoreIdx = scoreboard.ranked.Find(agent);
+
+            if (!activated[i]) {
+                continue;
+            }
+
+            scoreboard.fitnesses[scoreIdx] = fitness;
+            averageFitness += fitness;
+            count += 1;
+        }
+
+        averageFitness /= count;
+        countedFitnesses = count;
+
+        scoreboard.Sort();
+    }
+
     void Repopulate() {
         if (population > targetPop * survivalThreshold && population > 0) {
             return;
@@ -195,8 +301,7 @@ class ZGN_Population : Thinker {
 
         generation += 1;
 
-        //KillLivingAgents();
-
+        KillLivingAgents();
         scoreboard.UpdateFitnesses();
         CullUndesirable();
 
@@ -211,21 +316,21 @@ class ZGN_Population : Thinker {
 
         while (population < 2) {
             if (!RandomNew()) {
-                A_Log("heck");
+                console.printf("heck\n");
                 return;
             }
         }
 
         while (population < bredPop) {
             if (!BreedNew()) {
-                A_Log("heck");
+                console.printf("heck\n");
                 break;
             }
         }
 
         while (population < targetPop) {
             if (!RandomNew()) {
-                A_Log("heck");
+                console.printf("heck\n");
                 break;
             }
         }
