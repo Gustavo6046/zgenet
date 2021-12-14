@@ -60,6 +60,7 @@ class ZGN_Population : Thinker {
     int generation;
 
     ZGN_PopulationScoreboard scoreboard;
+    ZGN_NeuralNetwork model_net;
 
     // Hyperparameters
     int targetPop;
@@ -81,7 +82,15 @@ class ZGN_Population : Thinker {
         self.reproductionThreshold = reproductionThreshold;
     }
 
-    void Init(Class<ZGN_Agent> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+    void ConfigureModelNet(int inputs, int outputs, int hidden) {
+        if (model_net != null) {
+            model_net.Destroy();
+        }
+
+        model_net = ZGN_NeuralNetwork.make(inputs, outputs, hidden);
+    }
+
+    void Init(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
         ChangeStatNum(STAT_INFO);
 
         averageFitness = 0;
@@ -94,6 +103,10 @@ class ZGN_Population : Thinker {
         CofnigureSpawning(spawnStratType);
 
         self.agentType = agentType;
+
+        int inputs, outputs, hidden;
+        agentType.NeuralNetworkParameters(inputs, outputs, hidden);
+        model_net = ZGN_NeuralNetwork.Make(inputs, outputs, hidden);
     }
 
     static ZGN_Population Get(Class<ZGN_Agent> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
@@ -135,17 +148,15 @@ class ZGN_Population : Thinker {
         for (int i = 0; i < agents.Size(); i++) {
             if (agents[i].Alive()) {
                 agents[i].Kill();
-                // let ActivateBrain lead to the Death state;
-                // don't jump to it now, otherwise it will
-                // call UncountFromPop and mess things up
             }
         }
     }
 
     void CullUndesirable() {
         int cullIndex = scoreboard.ranked.Size() * reproductionThreshold + 1;
+        int toCull = scoreboard.ranked.Size() - cullIndex - 1;
 
-        while (cullIndex < scoreboard.ranked.Size()) {
+        while (toCull--) {
             let agent = scoreboard.ranked[cullIndex];
             RemoveAgent(agent);
             agent.Remove();
@@ -168,22 +179,13 @@ class ZGN_Population : Thinker {
             }
         }
 
-        bool success = ZGN_Agent.breed(scoreboard.ranked[momIdx], scoreboard.ranked[dadIdx], spawnStrat) != null;
-        spawnSpots.Delete(spawnSpots.Size() - 1);
+        bool success = ZGN_Agent.Breed(scoreboard.ranked[momIdx], scoreboard.ranked[dadIdx], spawnStrat) != null;
         return success;
     }
 
     bool RandomNew() {
-        if (spawnSpots.Size() == 0) {
-            return false;
-        }
-
-        Vector3 spawnPos = spawnSpots[Random(0, spawnSpots.Size() - 1)].Get();
-
-        Spawn("ZGN_Agent", spawnPos);
-        spawnSpots.Delete(spawnSpots.Size() - 1);
-
-        return true;
+        bool success = ZGN_Agent.SpawnRandomNet(agentType, spawnStrat, model_net) != null;
+        return success;
     }
 
     void Repopulate() {

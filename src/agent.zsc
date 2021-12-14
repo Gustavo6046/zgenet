@@ -11,7 +11,10 @@ class ZGN_AgentProvider : Actor abstract {
         GetActor().Destroy();
     }
 
+    static abstract ZGN_AgentProvider Spawn(ZGN_SpawningStrategy spawnStrat);
     abstract ZGN_AgentProvider Reproduce(ZGN_SpawningStrategy spawnStrat);
+
+    static abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden);
 }
 
 class ZGN_Agent {
@@ -71,7 +74,27 @@ class ZGN_Agent {
             return null;
         }
 
-        return ZGN_Agent.make(replica, ZGN_NeuralNetwork.make_random_like());
+        return ZGN_Agent.make(replica, ZGN_NeuralNetwork.make_random_like(net));
+    }
+
+    static ZGN_Agent SpawnWithNet(Class<ZGN_AgentProvider> agentType, ZGN_SpawningStrategy spawnStrat, ZGN_NeuralNetwork new_net) {
+        ZGN_AgentProvider aprov = agentType.Spawn(spawnStrat);
+
+        if (aprov == null) {
+            return null;
+        }
+
+        return ZGN_Agent.make(aprov, new_net);
+    }
+
+    static ZGN_Agent SpawnRandomNet(Class<ZGN_AgentProvider> agentType, ZGN_SpawningStrategy spawnStrat, ZGN_NeuralNetwork model_net) {
+        ZGN_AgentProvider aprov = agentType.Spawn(spawnStrat);
+
+        if (aprov == null) {
+            return null;
+        }
+
+        return ZGN_Agent.make(aprov, ZGN_NeuralNetwork.make_random_like(model_net));
     }
 
     double GetFitness() {
