@@ -11,9 +11,9 @@ class ZGN_AgentProvider abstract {
         GetActor().Destroy();
     }
 
-    static abstract ZGN_AgentProvider Spawn(ZGN_SpawningStrategy spawnStrat);
     abstract ZGN_AgentProvider Reproduce(ZGN_SpawningStrategy spawnStrat);
 
+    static abstract ZGN_AgentProvider Spawn(ZGN_SpawningStrategy spawnStrat);
     static abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden);
 }
 
@@ -27,6 +27,10 @@ class ZGN_Agent {
         agent.net = net;
 
         return agent;
+    }
+
+    static ZGN_Agent MakeRandomNet(ZGN_AgentProvider impl, ZGN_NeuralNetwork model_net) {
+        return Make(impl, ZGN_NeuralNetwork.make_random_like(model_net));
     }
 
     void Update() {
