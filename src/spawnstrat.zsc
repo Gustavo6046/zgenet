@@ -23,7 +23,7 @@ class ZGN_SpawningStrategy abstract {
     abstract Vector3 NextSpawnPos();
     abstract void Reset();
 
-    void OnDestroy() {
+    override void OnDestroy() {
         Reset();
     }
 }
@@ -35,7 +35,7 @@ class ZGN_DefaultSpawningStrategy : ZGN_SpawningStrategy {
         initialSpots.Push(Vector3V.Make(spot));
     }
 
-    void Reset() {
+    override void Reset() {
         for (int i = 0; i < initialSpots.Size(); i++) {
             initialSpots[i].Destroy();
         }

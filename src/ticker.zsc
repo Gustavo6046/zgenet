@@ -1,0 +1,57 @@
+class ZGN_Ticker : Actor {
+    Class<ZGN_AgentProvider> agentType;
+    Class<ZGN_SpawningStrategy> spawnStratType;
+    ZGN_Population popInfo;
+
+    override void BeginPlay() {
+        ChangeStatNum(STAT_INFO);
+    }
+
+    static ZGN_Ticker Get(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+        ThinkerIterator it = ThinkerIterator.Create("ZGN_Ticker", STAT_INFO);
+        ZGN_Ticker ticker;
+
+        while ((ticker = ZGN_Ticker(it.Next())) != null) {
+            if (ticker.agentType == agentType && ticker.spawnStratType == spawnStratType) {
+                break;
+            }
+        }
+
+        if (ticker == null) {
+            ticker = ZGN_Ticker(Spawn("ZGN_Ticker"));
+            ticker.Initialize(agentType, spawnStratType);
+        }
+
+        return ticker;
+    }
+
+    void Initialize(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStrat) {
+        self.agentType = agentType;
+        self.spawnStratType = spawnStrat;
+        self.popInfo = ZGN_Population.Get(agentType, spawnStrat);
+    }
+
+    void CallTicker() {
+        let numAgents = popInfo.agents.Size();
+
+        for (int i = 0; i < numAgents; i++) {
+            if (!popInfo.activated[i]) {
+                continue;
+            }
+
+            let agent = popInfo.agents[i];
+
+            agent.Update();
+        }
+    }
+
+    states {
+        Spawn:
+            TNT1 A 1;
+            goto Ticker;
+
+        Ticker:
+            TNT1 A 3 CallTicker;
+            loop;
+    }
+}

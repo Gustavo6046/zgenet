@@ -34,8 +34,8 @@ class ZGN_Connection {
     }
 
     void mutateWeights(float amount) {
-        weight += FRandom(-amount, amount) * ZGN_NeuralNetwork.FIXUNIT;
-        offset += FRandom(-amount, amount) * ZGN_NeuralNetwork.FIXUNIT;
+        weight += FRandom(-amount, amount) * ZGenet.FIXUNIT;
+        offset += FRandom(-amount, amount) * ZGenet.FIXUNIT;
     }
 }
 
@@ -184,7 +184,7 @@ class ZGN_NeuralNetwork {
             return null;
         }
 
-        ZGN_Connection newConn = ZGN_Connection.make(from, to, FRandom(-4, 4) * FIXUNIT, FRandom(-1, 1) * FIXUNIT);
+        ZGN_Connection newConn = ZGN_Connection.make(from, to, FRandom(-4, 4) * ZGenet.FIXUNIT, FRandom(-1, 1) * ZGenet.FIXUNIT);
         AddConnection(newConn);
 
         return newConn;
@@ -204,7 +204,7 @@ class ZGN_NeuralNetwork {
         return newConn;
     }
 
-    void process_values() {
+    void ProcessValues() {
         newHidden.Copy(hidden);
 
         for (int oi = 0; oi < num_outputs; oi++) {
@@ -218,26 +218,18 @@ class ZGN_NeuralNetwork {
             conn = connections[ci];
 
             neuronGet(conn.from, val);
-            val = val * conn.weight / FIXUNIT + conn.offset;
+            val = val * conn.weight / ZGenet.FIXUNIT + conn.offset;
 
             if (val < 0) {
                 // asymmetry is fun!
                 val /= 4;
             }
 
-            neuronAddTemp(conn.to, val * FIXUNIT / (FIXUNIT + abs(val)));
+            neuronAddTemp(conn.to, val * ZGenet.FIXUNIT / (ZGenet.FIXUNIT + abs(val)));
         }
 
         hidden.move(newHidden);
     }
-
-    /*void update() {
-    agent.refreshInputs(self);
-
-    process_values();
-
-    agent.applyOutputs(self);
-    }*/
 
     override void OnDestroy() {
         int i;

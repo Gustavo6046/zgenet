@@ -51,7 +51,7 @@ class ZGN_PopulationScoreboard {
 }
 
 class ZGN_Population : Thinker {
-    Class<ZGN_Agent> agentType;
+    Class<ZGN_AgentProvider> agentType;
     ZGN_SpawningStrategy spawnStrat;
 
     double averageFitness;
@@ -60,6 +60,7 @@ class ZGN_Population : Thinker {
     Array<ZGN_Agent> agents;
     Array<bool> activated;
     int generation;
+    int num_activated;
 
     ZGN_PopulationScoreboard scoreboard;
     ZGN_NeuralNetwork model_net;
@@ -68,6 +69,8 @@ class ZGN_Population : Thinker {
     int targetPop;
     float bredRepopulation;
     float survivalThreshold, reproductionThreshold;
+    float netMutateChance;
+    float connMutateAmount;
 
     void ConfigureSpawning(Class<ZGN_SpawningStrategy> newSpawnStrat) {
         if (spawnStrat != null) {
@@ -77,11 +80,13 @@ class ZGN_Population : Thinker {
         spawnStrat = ZGN_SpawningStrategy(new(newSpawnStrat));
     }
 
-    void ConfigureHyperparameters(int targetPop, float bredPoportion, float survivalThreshold, float reproductionThreshold) {
+    void ConfigureHyperparameters(int targetPop, float bredPoportion, float survivalThreshold, float reproductionThreshold, float netMutateChance, float connMutateAmount) {
         self.targetPop = targetPop;
         self.bredRepopulation = bredRepopulation;
         self.survivalThreshold = survivalThreshold;
         self.reproductionThreshold = reproductionThreshold;
+        self.netMutateChance = netMutateChance;
+        self.connMutateAmount = connMutateAmount;
     }
 
     void ConfigureModelNet(int inputs, int outputs, int hidden) {
@@ -101,28 +106,26 @@ class ZGN_Population : Thinker {
         scoreboard = New("ZGN_PopulationScoreboard");
 
         // (set hyperparameter values here)
-        ConfigureHyperparameters(400, 0.8, 0.1, 0.15);
-        CofnigureSpawning(spawnStratType);
+        ConfigureHyperparameters(400, 0.8, 0.1, 0.15, 25, 0.6);
+        ConfigureSpawning(spawnStratType);
 
         self.agentType = agentType;
 
         int inputs, outputs, hidden;
-        agentType.NeuralNetworkParameters(inputs, outputs, hidden);
-        model_net = ZGN_NeuralNetwork.Make(inputs, outputs, hidden);
     }
 
-    static ZGN_Population Get(Class<ZGN_Agent> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+    static ZGN_Population Get(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
         ThinkerIterator it = ThinkerIterator.Create("ZGN_Population", STAT_INFO);
         ZGN_Population p;
 
         while ((p = ZGN_Population(it.Next())) != null) {
-            if (p.agentType == agentType && p.spawnStrat != null && p.spawnStrat.CheckClass(spawnStratType)) {
+            if (p.agentType == agentType && p.spawnStrat != null && p.spawnStrat.GetClass() is spawnStratType) {
                 break;
             }
         }
 
         if (p == null) {
-            p = ZGN_Population(Spawn("ZGN_Population"));
+            p = ZGN_Population(New("ZGN_Population"));
             p.Init(agentType, spawnStratType);
         }
 
@@ -149,14 +152,14 @@ class ZGN_Population : Thinker {
     }
 
     void UpdateFitness(ZGN_Agent agent) {
-        let scoreIdx = scoreboard.ranked.index(agent);
+        let scoreIdx = scoreboard.ranked.Find(agent);
         let oldFit = scoreboard.fitnesses[scoreIdx];
         let newFit = agent.GetFitness();
 
         if (oldFit != newFit) {
             scoreboard.fitnesses[scoreIdx] = newFit;
             UpdateAverageFitness(oldFit, newFit);
-            Sort();
+            scoreboard.Sort();
         }
     }
 
@@ -209,7 +212,7 @@ class ZGN_Population : Thinker {
 
         scoreboard.ranked.Push(agent);
         scoreboard.fitnesses.Push(agent.GetFitness());
-        Sort();
+        scoreboard.Sort();
     }
 
     void Deactivate(ZGN_Agent agent) {
@@ -227,7 +230,7 @@ class ZGN_Population : Thinker {
 
     void KillLivingAgents() {
         for (int i = 0; i < agents.Size(); i++) {
-            if (agents[i].Alive()) {
+            if (agents[i].IsAlive()) {
                 agents[i].Kill();
             }
         }
@@ -235,12 +238,13 @@ class ZGN_Population : Thinker {
 
     void CullUndesirable() {
         int cullIndex = scoreboard.ranked.Size() * reproductionThreshold + 1;
-        int toCull = scoreboard.ranked.Size() - cullIndex - 1;
+        int cullCap = scoreboard.ranked.Size();
 
-        while (toCull--) {
+        while (cullIndex < cullCap) {
             let agent = scoreboard.ranked[cullIndex];
             RemoveAgent(agent);
             agent.Remove();
+            cullCap -= 1;
         }
     }
 
@@ -260,13 +264,12 @@ class ZGN_Population : Thinker {
             }
         }
 
-        bool success = ZGN_Agent.Breed(scoreboard.ranked[momIdx], scoreboard.ranked[dadIdx], spawnStrat) != null;
-        return success;
+        ZGN_Agent agent = ZGN_Agent.Breed(scoreboard.ranked[momIdx], scoreboard.ranked[dadIdx], spawnStrat, netMutateChance, connMutateAmount);
+        return (agent != null);
     }
 
     bool RandomNew() {
-        bool success = ZGN_Agent.SpawnRandomNet(agentType, spawnStrat, model_net) != null;
-        return success;
+        return (ZGN_Agent.CreateNewRandomNet(agentType, spawnStrat) != null);
     }
 
     void UpdateFitnesses() {
@@ -295,7 +298,7 @@ class ZGN_Population : Thinker {
     }
 
     void Repopulate() {
-        if (population > targetPop * survivalThreshold && population > 0) {
+        if (num_activated > targetPop * survivalThreshold && num_activated > 0) {
             return;
         }
 
@@ -307,28 +310,28 @@ class ZGN_Population : Thinker {
 
         int bredPop = targetPop * bredRepopulation;
 
-        A_Log(
-            String.Format("Repopulating agents; generation %i is done (will breed %i more and create %i random)",
+        console.printf(
+            "Repopulating agents; generation %i is done (will breed %i more and create %i random)",
                 generation,
-                bredPop - population - (population >= 2 ? 0 : (2 - population)),
-                targetPop - bredPop + (population >= 2 ? 0 : (2 - population)))
+                bredPop - num_activated - (num_activated >= 2 ? 0 : (2 - population)),
+                targetPop - bredPop + (num_activated >= 2 ? 0 : (2 - population))
         );
 
-        while (population < 2) {
+        while (num_activated < 2) {
             if (!RandomNew()) {
                 console.printf("heck\n");
                 return;
             }
         }
 
-        while (population < bredPop) {
+        while (num_activated < bredPop) {
             if (!BreedNew()) {
                 console.printf("heck\n");
                 break;
             }
         }
 
-        while (population < targetPop) {
+        while (num_activated < targetPop) {
             if (!RandomNew()) {
                 console.printf("heck\n");
                 break;

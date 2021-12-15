@@ -1,4 +1,4 @@
-class ZGN_AgentProvider abstract {
+class ZGN_AgentProvider : Actor abstract {
     abstract void RefreshInputs(ZGN_NeuralNetwork net);
     abstract void ApplyOutputs(ZGN_NeuralNetwork net);
     abstract Actor GetActor();
@@ -11,20 +11,27 @@ class ZGN_AgentProvider abstract {
         GetActor().Destroy();
     }
 
-    abstract ZGN_AgentProvider Reproduce(ZGN_SpawningStrategy spawnStrat);
+    virtual void Initialize(ZGN_Agent newAgent, Actor newActor) {}
+    abstract Class<Actor> ActorType();
 
-    static abstract ZGN_AgentProvider Spawn(ZGN_SpawningStrategy spawnStrat);
-    static abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden);
+    abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden);
+
+    virtual ZGN_Population GetPopulation(Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
+        ZGN_Ticker.Get(GetClass(), spawnStratType);
+        return ZGN_Population.Get(GetClass(), spawnStratType);
+    }
 }
 
-class ZGN_Agent {
+class ZGN_Agent : Actor {
     ZGN_AgentProvider impl;
     ZGN_NeuralNetwork net;
 
     static ZGN_Agent Make(ZGN_AgentProvider impl, ZGN_NeuralNetwork net) {
-        let agent = ZGN_Agent(new("ZGN_Agent"));
+        let agent = ZGN_Agent(Spawn("ZGN_Agent"));
         agent.impl = impl;
         agent.net = net;
+
+        ZGN_Population popInfo = impl.GetPopulation();
 
         return agent;
     }
@@ -33,10 +40,89 @@ class ZGN_Agent {
         return Make(impl, ZGN_NeuralNetwork.make_random_like(model_net));
     }
 
+    static private void CreateNewInit(out ZGN_AgentProvider provider, out Actor agentActor, out ZGN_Population popInfo, Class<ZGN_AgentProvider> implType, out ZGN_SpawningStrategy spawnStrat, Vector3V posv = null) {
+        Vector3 pos;
+
+        provider = ZGN_AgentProvider(Spawn(implType));
+
+        if (spawnStrat == null) {
+            popInfo = provider.GetPopulation();
+            spawnStrat = popInfo.spawnStrat;
+        }
+
+        else {
+            popInfo = provider.GetPopulation(spawnStrat.GetClass());
+        }
+
+        if (posv == null) {
+            pos = spawnStrat.NextSpawnPos();
+        }
+
+        else {
+            pos = posv.Get();
+        }
+
+        agentActor = provider.Spawn(provider.ActorType(), pos);
+    }
+
+    static ZGN_Agent CreateNewInitially(Class<ZGN_AgentProvider> implType, Vector3 pos) {
+        ZGN_AgentProvider provider;
+        Actor agentActor;
+        ZGN_Population popInfo;
+        ZGN_SpawningStrategy spawnStrat = null;
+
+        Vector3V posv = Vector3V.Make(pos);
+        CreateNewInit(provider, agentActor, popInfo, implType, spawnStrat, posv);
+        posv.Destroy();
+
+        spawnStrat.RegisterSpot(pos);
+        agentActor.SetOrigin(pos, false);
+
+        int inputs, outputs, hidden;
+        provider.NeuralNetworkParameters(inputs, outputs, hidden);
+        ZGN_NeuralNetwork net = ZGN_NeuralNetwork.make(inputs, outputs, hidden);
+
+        ZGN_Agent agent = ZGN_Agent.Make(provider, net);
+        provider.Initialize(agent, agentActor);
+        popInfo.AddAgent(agent);
+
+        return agent;
+    }
+
+    static ZGN_Agent CreateNewWithNet(Class<ZGN_AgentProvider> implType, ZGN_NeuralNetwork net, ZGN_SpawningStrategy spawnStrat = null) {
+        ZGN_AgentProvider provider;
+        Actor agentActor;
+        ZGN_Population popInfo;
+        CreateNewInit(provider, agentActor, popInfo, implType, spawnStrat);
+
+        ZGN_Agent agent = ZGN_Agent.Make(provider, net);
+        provider.Initialize(agent, agentActor);
+        popInfo.AddAgent(agent);
+
+        return agent;
+    }
+
+    static ZGN_Agent CreateNewRandomNet(Class<ZGN_AgentProvider> implType, ZGN_SpawningStrategy spawnStrat = null) {
+        ZGN_AgentProvider provider;
+        Actor agentActor;
+        ZGN_Population popInfo;
+        CreateNewInit(provider, agentActor, popInfo, implType, spawnStrat);
+
+        int inputs, outputs, hidden;
+        provider.NeuralNetworkParameters(inputs, outputs, hidden);
+        ZGN_NeuralNetwork net = ZGN_NeuralNetwork.make(inputs, outputs, hidden);
+
+        ZGN_Agent agent = ZGN_Agent.Make(provider, net);
+        provider.Initialize(agent, agentActor);
+        popInfo.AddAgent(agent);
+
+        return agent;
+    }
+
     void Update() {
         impl.RefreshInputs(net);
 
-        net.process_values();
+        net.ProcessValues();
 
         impl.ApplyOutputs(net);
     }
@@ -45,60 +131,14 @@ class ZGN_Agent {
         return impl.GetActor();
     }
 
-    ZGN_Agent ReproduceWithNet(ZGN_NeuralNetwork new_net, ZGN_SpawningStrategy spawnStrat) {
-        ZGN_AgentProvider replica = impl.Reproduce(spawnStrat);
-
-        if (replica == null) {
-            return null;
-        }
-
-        return ZGN_Agent.make(replica, new_net);
-    }
-
-    static ZGN_Agent Breed(ZGN_Agent mom, ZGN_Agent dad, float netMutateChance = 25, float connMutateAmount = 0.6, ZGN_SpawningStrategy spawnStrat) {
-        ZGN_AgentProvider replica = mom.impl.Reproduce(spawnStrat);
-
-        if (replica == null) {
-            return null;
-        }
-
-        ZGN_NeuralNetwork new_net = ZGN_NeuralNetwork.breed(mom.net, dad.net, netMutateChance, connMutateAmount) ;
+    static ZGN_Agent Breed(ZGN_Agent mom, ZGN_Agent dad, ZGN_SpawningStrategy spawnStrat, float netMutateChance = 25, float connMutateAmount = 0.6) {
+        ZGN_NeuralNetwork new_net = ZGN_NeuralNetwork.breed(mom.net, dad.net, netMutateChance, connMutateAmount);
 
         if (new_net == null) {
             return null;
         }
 
-        return ZGN_Agent.make(replica, new_net);
-    }
-
-    ZGN_Agent ReproduceRandomNet(ZGN_SpawningStrategy spawnStrat) {
-        ZGN_AgentProvider replica = impl.Reproduce(spawnStrat);
-
-        if (replica == null) {
-            return null;
-        }
-
-        return ZGN_Agent.make(replica, ZGN_NeuralNetwork.make_random_like(net));
-    }
-
-    static ZGN_Agent SpawnWithNet(Class<ZGN_AgentProvider> agentType, ZGN_SpawningStrategy spawnStrat, ZGN_NeuralNetwork new_net) {
-        ZGN_AgentProvider aprov = agentType.Spawn(spawnStrat);
-
-        if (aprov == null) {
-            return null;
-        }
-
-        return ZGN_Agent.make(aprov, new_net);
-    }
-
-    static ZGN_Agent SpawnRandomNet(Class<ZGN_AgentProvider> agentType, ZGN_SpawningStrategy spawnStrat, ZGN_NeuralNetwork model_net) {
-        ZGN_AgentProvider aprov = agentType.Spawn(spawnStrat);
-
-        if (aprov == null) {
-            return null;
-        }
-
-        return ZGN_Agent.make(aprov, ZGN_NeuralNetwork.make_random_like(model_net));
+        return CreateNewWithNet(mom.impl.GetClass(), new_net, spawnStrat);
     }
 
     double GetFitness() {
@@ -110,10 +150,20 @@ class ZGN_Agent {
     }
 
     void Kill() {
-        return impl.Kill();
+        impl.Kill();
     }
 
     void Remove() {
-        return impl.Remove();
+        impl.Remove();
+    }
+
+    override void OnDestroy() {
+        if (impl != null && !impl.bDestroyed) {
+            impl.Destroy();
+        }
+
+        if (net != null) {
+            net.Destroy();
+        }
     }
 }
