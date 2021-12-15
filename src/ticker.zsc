@@ -19,6 +19,7 @@ class ZGN_Ticker : Actor {
 
         if (ticker == null) {
             ticker = ZGN_Ticker(Spawn("ZGN_Ticker"));
+            console.printf("Registered ticker for %s (spawn strat %s)", agentType.GetClassName(), spawnStratType.GetClassName());
             ticker.Initialize(agentType, spawnStratType);
         }
 
