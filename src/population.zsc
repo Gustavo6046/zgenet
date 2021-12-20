@@ -107,7 +107,7 @@ class ZGN_Population : Thinker {
         scoreboard = New("ZGN_PopulationScoreboard");
 
         // (set hyperparameter values here)
-        ConfigureHyperparameters(400, 0.8, 0.1, 0.15, 25, 0.6);
+        ConfigureHyperparameters(250, 0.8, 0.1, 0.15, 25, 0.6);
         ConfigureSpawning(spawnStratType);
 
         self.agentType = agentType;
