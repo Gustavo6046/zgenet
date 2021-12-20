@@ -14,7 +14,7 @@ class ZGN_AgentProvider : Actor abstract {
     virtual void Initialize(ZGN_Agent newAgent, Actor newActor) {}
     abstract Class<Actor> ActorType();
 
-    abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden);
+    abstract void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden, out int numConnections);
 
     virtual ZGN_Population GetPopulation(Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
         ZGN_Ticker.Get(GetClass(), spawnStratType);
@@ -78,9 +78,10 @@ class ZGN_Agent : Actor {
         spawnStrat.RegisterSpot(pos);
         agentActor.SetOrigin(pos, false);
 
-        int inputs, outputs, hidden;
-        provider.NeuralNetworkParameters(inputs, outputs, hidden);
+        int inputs, outputs, hidden, numConnections;
+        provider.NeuralNetworkParameters(inputs, outputs, hidden, numConnections);
         ZGN_NeuralNetwork net = ZGN_NeuralNetwork.make(inputs, outputs, hidden);
+        net.connectRandomMany(numConnections);
 
         ZGN_Agent agent = ZGN_Agent.Make(provider, net);
         provider.Initialize(agent, agentActor);
@@ -108,9 +109,10 @@ class ZGN_Agent : Actor {
         ZGN_Population popInfo;
         CreateNewInit(provider, agentActor, popInfo, implType, spawnStrat);
 
-        int inputs, outputs, hidden;
-        provider.NeuralNetworkParameters(inputs, outputs, hidden);
+        int inputs, outputs, hidden, numConnections;
+        provider.NeuralNetworkParameters(inputs, outputs, hidden, numConnections);
         ZGN_NeuralNetwork net = ZGN_NeuralNetwork.make(inputs, outputs, hidden);
+        net.connectRandomMany(numConnections);
 
         ZGN_Agent agent = ZGN_Agent.Make(provider, net);
         provider.Initialize(agent, agentActor);

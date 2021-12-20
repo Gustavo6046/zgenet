@@ -68,7 +68,6 @@ class ZGN_Population : Thinker {
 
     // Hyperparameters
     int targetPop;
-    int numInitialConnections;
     float bredRepopulation;
     float survivalThreshold, reproductionThreshold;
     float netMutateChance;
@@ -89,15 +88,13 @@ class ZGN_Population : Thinker {
             float survivalThreshold = 0.1,
             float reproductionThreshold = 0.15,
             float netMutateChance = 25,
-            float connMutateAmount = 0.3,
-            int numInitialConnections = 40) {
+            float connMutateAmount = 0.3) {
         self.targetPop = targetPop;
         self.bredRepopulation = bredRepopulation;
         self.survivalThreshold = survivalThreshold;
         self.reproductionThreshold = reproductionThreshold;
         self.netMutateChance = netMutateChance;
         self.connMutateAmount = connMutateAmount;
-        self.numInitialConnections = numInitialConnections;
     }
 
     void ConfigureModelNet(int inputs, int outputs, int hidden) {
@@ -292,7 +289,6 @@ class ZGN_Population : Thinker {
             return false;
         }
 
-        res.net.connectRandomMany(numInitialConnections);
         return true;
     }
 

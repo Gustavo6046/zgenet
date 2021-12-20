@@ -290,10 +290,11 @@ class GeneZombieAgent : ZGN_AgentProvider {
         age = 0;
     }
 
-    override void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden) {
+    override void NeuralNetworkParameters(out int inputs, out int outputs, out int hidden, out int numConnections) {
         inputs = 26;
         outputs = 10;
         hidden = 30;
+        numConnections = 40;
     }
 
     //====
