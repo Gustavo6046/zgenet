@@ -162,10 +162,11 @@ class ZGN_NeuralNetwork {
     }
 
     bool AddConnection(ZGN_Connection conn) {
-        if (alreadyConnected.Find(conn.from << 16 || conn.to) != -1) {
+        if (alreadyConnected.Find(conn.from << 16 | conn.to) != alreadyConnected.Size()) {
             return false;
         }
 
+        alreadyConnected.Push(conn.from << 16 | conn.to);
         connections.Push(conn);
         return true;
     }
