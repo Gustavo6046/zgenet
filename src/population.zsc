@@ -80,7 +80,7 @@ class ZGN_Population : Thinker {
         spawnStrat = ZGN_SpawningStrategy(new(newSpawnStrat));
     }
 
-    void ConfigureHyperparameters(int targetPop, float bredPoportion, float survivalThreshold, float reproductionThreshold, float netMutateChance, float connMutateAmount) {
+    void ConfigureHyperparameters(int targetPop, float bredRepopulation, float survivalThreshold, float reproductionThreshold, float netMutateChance, float connMutateAmount) {
         self.targetPop = targetPop;
         self.bredRepopulation = bredRepopulation;
         self.survivalThreshold = survivalThreshold;
@@ -313,8 +313,8 @@ class ZGN_Population : Thinker {
         console.printf(
             "Repopulating agents; generation %i is done (will breed %i more and create %i random)",
                 generation,
-                bredPop - num_activated - (num_activated >= 2 ? 0 : (2 - population)),
-                targetPop - bredPop + (num_activated >= 2 ? 0 : (2 - population))
+                bredPop - num_activated - (num_activated >= 2 ? 0 : (2 - num_activated)),
+                targetPop - bredPop + (num_activated >= 2 ? 0 : (2 - num_activated))
         );
 
         while (num_activated < 2) {
