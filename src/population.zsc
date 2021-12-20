@@ -61,6 +61,7 @@ class ZGN_Population : Thinker {
     Array<bool> activated;
     int generation;
     int num_activated;
+    bool repopulationPending;
 
     ZGN_PopulationScoreboard scoreboard;
     ZGN_NeuralNetwork model_net;
@@ -98,7 +99,7 @@ class ZGN_Population : Thinker {
     }
 
     void Init(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
-        ChangeStatNum(STAT_INFO);
+        ChangeStatNum(76);
 
         averageFitness = 0;
         population = 0;
@@ -115,7 +116,7 @@ class ZGN_Population : Thinker {
     }
 
     static ZGN_Population Get(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
-        ThinkerIterator it = ThinkerIterator.Create("ZGN_Population", STAT_INFO);
+        ThinkerIterator it = ThinkerIterator.Create("ZGN_Population", 76);
         ZGN_Population p;
 
         while ((p = ZGN_Population(it.Next())) != null) {
@@ -304,13 +305,25 @@ class ZGN_Population : Thinker {
         scoreboard.Sort();
     }
 
+    override void Tick() {
+        if (repopulationPending) {
+            DoRepopulate();
+        }
+    }
+
     void Repopulate() {
+        if (repopulationPending) {
+            return;
+        }
+
         if (num_activated > targetPop * survivalThreshold && num_activated > 0) {
             return;
         }
 
-        generation += 1;
+        repopulationPending = true;
+    }
 
+    void DoRepopulate() {
         KillLivingAgents();
         scoreboard.UpdateFitnesses();
         CullUndesirable();
@@ -320,11 +333,13 @@ class ZGN_Population : Thinker {
         console.printf(
             "Repopulating agents; generation %i is done (will breed %i more and create %i random)",
                 generation,
-                bredPop - num_activated - (num_activated >= 2 ? 0 : (2 - num_activated)),
-                targetPop - bredPop + (num_activated >= 2 ? 0 : (2 - num_activated))
+                bredPop - num_activated - (population >= 2 ? 0 : (2 - population)),
+                targetPop - bredPop + (population >= 2 ? 0 : (2 - population))
         );
 
-        while (num_activated < 2) {
+        generation += 1;
+
+        while (population < 2) {
             if (!RandomNew()) {
                 console.printf("heck\n");
                 return;
@@ -344,5 +359,7 @@ class ZGN_Population : Thinker {
                 break;
             }
         }
+
+        repopulationPending = false;
     }
 }
