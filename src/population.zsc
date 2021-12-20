@@ -136,6 +136,12 @@ class ZGN_Population : Thinker {
         let oldfit = agent.GetFitness();
         let idx = agents.Find(agent);
 
+        if (activated[idx]) {
+            num_activated--;
+        }
+
+        population--;
+
         agents.Delete(idx);
         activated.Delete(idx);
 
@@ -189,6 +195,7 @@ class ZGN_Population : Thinker {
         agents.Push(agent);
         activated.Push(true);
         num_activated++;
+        population++;
 
         scoreboard.ranked.Push(agent);
         scoreboard.fitnesses.Push(fitness);
