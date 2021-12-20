@@ -22,10 +22,6 @@ class ZGN_SpawningStrategy abstract {
     abstract void RegisterSpot(Vector3 spot);
     abstract Vector3 NextSpawnPos();
     abstract void Reset();
-
-    override void OnDestroy() {
-        Reset();
-    }
 }
 
 class ZGN_DefaultSpawningStrategy : ZGN_SpawningStrategy {

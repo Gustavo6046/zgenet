@@ -231,18 +231,6 @@ class ZGN_NeuralNetwork {
         hidden.move(newHidden);
     }
 
-    override void OnDestroy() {
-        int i;
-
-        for (i = 0; i < connections.Size(); i++) {
-            if (connections[i] != null && !connections[i].bDestroyed) {
-                connections[i].Destroy();
-            }
-        }
-
-        connections.Clear();
-    }
-
     ZGN_Connection connectRandom() {
         int fromType = (Random(0, 1) == 0) ? NEU_INPUTS : NEU_HIDDEN;
         int toType = (Random(0, 2) == 0) ? NEU_OUTPUTS : NEU_HIDDEN;

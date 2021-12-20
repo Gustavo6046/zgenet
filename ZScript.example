@@ -31,12 +31,6 @@ class GeneZombieActor : ZombieMan {
 
     ZGN_Population popInfo;
 
-    override void OnDestroy() {
-        if (agentProvider != null) {
-            agentProvider.Destroy();
-        }
-    }
-
 
     default {
         +THRUSPECIES;
@@ -424,12 +418,6 @@ class GeneZombieAgent : ZGN_AgentProvider {
         // if applicable, fire!
         if (myZombie.ready && net.outputs[5] > ZGenet.FIXUNIT * 3 / 4) {
             myZombie.SetStateLabel("Missile");
-        }
-    }
-
-    override void OnDestroy() {
-        if (agent != null) {
-            agent.Destroy();
         }
     }
 }

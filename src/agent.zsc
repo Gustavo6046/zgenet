@@ -156,14 +156,4 @@ class ZGN_Agent : Actor {
     void Remove() {
         impl.Remove();
     }
-
-    override void OnDestroy() {
-        if (impl != null && !impl.bDestroyed) {
-            impl.Destroy();
-        }
-
-        if (net != null) {
-            net.Destroy();
-        }
-    }
 }
