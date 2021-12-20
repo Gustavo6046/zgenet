@@ -408,7 +408,7 @@ class GeneZombieAgent : ZGN_AgentProvider {
         }
 
         // apply turn
-        myZombie.angle += (net.outputs[0] - net.outputs[6]) * 9 / ZGenet.FIXUNIT;
+        myZombie.angle += (net.outputs[0] - net.outputs[6]) * 9.0 / ZGenet.FIXUNIT;
 
         // apply pitch
         double pitchMove = (net.outputs[8] - net.outputs[9]) * 1.0 / ZGenet.FIXUNIT * 2;
