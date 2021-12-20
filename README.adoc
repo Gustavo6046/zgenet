@@ -26,21 +26,27 @@ Then, assuming your main ZScript file is on the same directory,
 include `zgenet/zgenet.zsc`. There is no need to load `zgenet`
 as a separate mod - just include it as a subdirectory of yours!
 
-For an example on how to implement this, see `ZScript.example.zsc`.
+For an example on how to implement this, see `ZScript.example`.
 
 === Run as Example
 
-Run this mod as a folder, alongside Doom 2:
+Run this mod as a folder, alongside Doom 2.
+
+This is one of many ways to observe the example setup with the Gene Zombies:
 
 [source,console]
 ----
 git clone "https://github.com/Gustavo6046/zgenet" zgenet
-gzdoom -iwad doom2.wad -file zgenet +map map30 +notarget +noclip +god
+gzdoom -iwad doom2.wad -file zgenet +map map30 +noclip +god2
 ----
+
+Move to the main area to wake up the Icon of Sin, then issue `notarget` so
+spawned monsters don't get distracted targeting you. Then, spawn a zombie
+population as follows.
 
 Running `summon GeneZombie 180` on the console will spawn a single zombie. This
 will also remember its starting position. Then, instantly kill it with `mdk` to
-trigger repopulation, which should spawn 100 zombies to replace it.
+trigger repopulation, which should spawn a few hundred zombies to replace it.
 
 When first spawned, a zombie will have random behaviour, roaming around and probably
 shooting around too.
