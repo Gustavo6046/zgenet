@@ -417,7 +417,7 @@ class GeneZombieAgent : ZGN_AgentProvider {
         myZombie.pitch -= myZombie.pitch * 0.15; // soft lookspring
 
         // if applicable, fire!
-        if (target != null && myZombie.ready && net.outputs[5] > ZGenet.FIXUNIT * 3 / 4) {
+        if (myZombie.target != null && myZombie.ready && net.outputs[5] > ZGenet.FIXUNIT * 3 / 4) {
             myZombie.SetStateLabel("Missile");
         }
     }
