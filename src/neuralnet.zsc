@@ -323,6 +323,10 @@ class ZGN_NeuralNetwork {
 
         switch (mtype) {
             case MT_CONNVALUES:
+                if (connections.Size() == 0) {
+                    break;
+                }
+
                 which = Random(0, connections.Size() - 1);
 
                 connections[which].mutateWeights(connMutateAmount);
@@ -335,7 +339,12 @@ class ZGN_NeuralNetwork {
                 break;
 
             case MT_KILLCONN:
+                if (connections.Size() == 0) {
+                    break;
+                }
+
                 which = Random(0, connections.Size() - 1);
+
                 RemoveConnection(which);
 
                 break;
