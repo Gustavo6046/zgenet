@@ -4,11 +4,11 @@ class ZGN_Ticker : Actor {
     ZGN_Population popInfo;
 
     override void BeginPlay() {
-        ChangeStatNum(STAT_INFO);
+        ChangeStatNum(75);
     }
 
     static ZGN_Ticker Get(Class<ZGN_AgentProvider> agentType, Class<ZGN_SpawningStrategy> spawnStratType = "ZGN_DefaultSpawningStrategy") {
-        ThinkerIterator it = ThinkerIterator.Create("ZGN_Ticker", STAT_INFO);
+        ThinkerIterator it = ThinkerIterator.Create("ZGN_Ticker", 75);
         ZGN_Ticker ticker;
 
         while ((ticker = ZGN_Ticker(it.Next())) != null) {
@@ -19,7 +19,6 @@ class ZGN_Ticker : Actor {
 
         if (ticker == null) {
             ticker = ZGN_Ticker(Spawn("ZGN_Ticker"));
-            console.printf("Registered ticker for %s (spawn strat %s)", agentType.GetClassName(), spawnStratType.GetClassName());
             ticker.Initialize(agentType, spawnStratType);
         }
 
