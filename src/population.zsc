@@ -68,6 +68,7 @@ class ZGN_Population : Thinker {
 
     // Hyperparameters
     int targetPop;
+    int numInitialConnections;
     float bredRepopulation;
     float survivalThreshold, reproductionThreshold;
     float netMutateChance;
@@ -81,13 +82,22 @@ class ZGN_Population : Thinker {
         spawnStrat = ZGN_SpawningStrategy(new(newSpawnStrat));
     }
 
-    void ConfigureHyperparameters(int targetPop, float bredRepopulation, float survivalThreshold, float reproductionThreshold, float netMutateChance, float connMutateAmount) {
+    void ConfigureHyperparameters(
+            // MNT: set hyperparameter values here!
+            int targetPop = 50,
+            float bredRepopulation = 0.8,
+            float survivalThreshold = 0.1,
+            float reproductionThreshold = 0.15,
+            float netMutateChance = 25,
+            float connMutateAmount = 0.3,
+            int numInitialConnections = 40) {
         self.targetPop = targetPop;
         self.bredRepopulation = bredRepopulation;
         self.survivalThreshold = survivalThreshold;
         self.reproductionThreshold = reproductionThreshold;
         self.netMutateChance = netMutateChance;
         self.connMutateAmount = connMutateAmount;
+        self.numInitialConnections = numInitialConnections;
     }
 
     void ConfigureModelNet(int inputs, int outputs, int hidden) {
@@ -106,8 +116,7 @@ class ZGN_Population : Thinker {
         generation = 1;
         scoreboard = New("ZGN_PopulationScoreboard");
 
-        // (set hyperparameter values here)
-        ConfigureHyperparameters(250, 0.8, 0.1, 0.15, 25, 0.6);
+        ConfigureHyperparameters();
         ConfigureSpawning(spawnStratType);
 
         self.agentType = agentType;
@@ -277,7 +286,14 @@ class ZGN_Population : Thinker {
     }
 
     bool RandomNew() {
-        return (ZGN_Agent.CreateNewRandomNet(agentType, spawnStrat) != null);
+        ZGN_Agent res = ZGN_Agent.CreateNewRandomNet(agentType, spawnStrat);
+
+        if (res == null) {
+            return false;
+        }
+
+        res.net.connectRandomMany(numInitialConnections);
+        return true;
     }
 
     void UpdateFitnesses() {
