@@ -235,7 +235,9 @@ class ZGN_NeuralNetwork {
         int i;
 
         for (i = 0; i < connections.Size(); i++) {
-            connections[i].Destroy();
+            if (connections[i] != null && !connections[i].bDestroyed) {
+                connections[i].Destroy();
+            }
         }
 
         connections.Clear();
